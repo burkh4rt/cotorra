@@ -1,0 +1,27 @@
+%YAML 1.2
+---
+processed_data_home: /mnt/bbj-lab/users/burkh4rt/cocoa/processed
+# ~/cocoa/processed
+# /gpfs/data/bbj-lab/users/burkh4rt/cocoa/processed
+
+max_seq_len: !!int 4096
+
+model_config: ./config/model/llama-32-lite.yaml
+
+wandb:
+  project: cotorra
+  run_name: cotorra-llama-32
+output_dir: ./output
+
+per_device_train_batch_size: !!int 16
+per_device_eval_batch_size: !!int 16
+eval_strategy: steps
+save_strategy: best
+n_epochs: !!int 3
+
+tokens_of_interest:
+  - XFR-IN//icu
+  - RESP//imv
+  - DSCG//expired
+  - DSCG//hospice
+toi_weight: !!float 10

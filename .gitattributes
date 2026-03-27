@@ -1,0 +1,4 @@
+
+# idiosyncratic
+*.lock linguist-generated=true
+LICEN[CS]E.* linguist-generated=true

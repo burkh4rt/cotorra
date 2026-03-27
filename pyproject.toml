@@ -1,0 +1,73 @@
+[project]
+    classifiers = [
+        "Development Status :: 2 - Pre-Alpha",
+        "Intended Audience :: Science/Research",
+        "Natural Language :: English",
+        "Programming Language :: Python :: 3",
+    ]
+    dependencies = [
+        "accelerate>=1.13.0",
+        "datasets>=4.8.4",
+        "huggingface-hub>=1.7.2",
+        "numpy>=2.4.2",
+        "omegaconf>=2.3.0",
+        "polars>=1.39.0",
+        "rich>=14.3.3",
+        "torch>=2.11.0",
+        "transformers>=5.3.0",
+        "typer>=0.24.1",
+        "wandb>=0.25.1",
+    ]
+    description = "configurable trainer for generative event models"
+    keywords = [
+        "model training",
+        "generative event models",
+        "configurable training",
+    ]
+    license = "MIT"
+    license-files = [ "LICEN[CS]E.*" ]
+    name = "cotorra"
+    readme = { file = "README.md", content-type = "text/markdown" }
+    requires-python = ">=3.12"
+    version = "26.0.0"
+
+    [project.scripts]
+        cotorra = "cotorra.cli:main"
+
+    [project.urls]
+        Repository = "https://github.com/bbj-lab/cotorra"
+
+[dependency-groups]
+    dev = [ "pip>=26.0.1", "ruff>=0.15.4" ]
+
+[tool.ruff]
+    extend-exclude = [ "*.md" ]
+    line-length    = 88
+
+    [tool.ruff.format]
+        docstring-code-format     = true
+        indent-style              = "space"
+        line-ending               = "lf"
+        quote-style               = "double"
+        skip-magic-trailing-comma = true
+
+    [tool.ruff.lint]
+        ignore = [ "E731" ]
+        select = [ "E", "F", "I" ]
+
+        [tool.ruff.lint.isort]
+            known-first-party = [ "cotorra" ]
+
+[tool.setuptools.packages.find]
+    where = [ "src" ]
+
+[build-system]
+    build-backend = "setuptools.build_meta"
+    requires      = [ "setuptools>=82.0", "wheel", "ninja" ]
+
+[tool.uv]
+    exclude-newer = "2026-04-04T00:00:00Z"
+    no-cache      = true
+
+    [tool.uv.pip]
+        index-strategy = "unsafe-best-match"
