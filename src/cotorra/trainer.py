@@ -93,21 +93,6 @@ class Trainer:
             labels = input_ids.clone()
             return {"input_ids": input_ids, "labels": labels}
 
-        training_args = TrainingArguments(
-            report_to="wandb",
-            run_name=self.cfg.wandb.run_name,
-            output_dir=str(self.output_dir),
-            per_device_train_batch_size=self.cfg.per_device_train_batch_size,
-            per_device_eval_batch_size=self.cfg.per_device_eval_batch_size,
-            save_total_limit=1,
-            metric_for_best_model="eval_loss",
-            load_best_model_at_end=True,
-            greater_is_better=False,
-            eval_strategy=self.cfg.eval_strategy,
-            save_strategy=self.cfg.save_strategy,
-            ddp_find_unused_parameters=False,
-        )
-
         def custom_loss(outputs, labels, **kwargs):
             logits = outputs.logits  # (batch, seq_len, vocab_size)
             return t.nn.CrossEntropyLoss(
@@ -120,7 +105,9 @@ class Trainer:
             compute_loss_func=custom_loss if self.cfg.toi_weight != 1.0 else None,
             train_dataset=self.loader.get_training_data(),
             eval_dataset=self.loader.get_tuning_data(),
-            args=training_args,
+            args=TrainingArguments(
+                output_dir=str(self.output_dir), **self.cfg.training_args
+            ),
             callbacks=[
                 EarlyStoppingCallback(early_stopping_patience=3),
                 NanStoppingCallback(),
@@ -128,9 +115,8 @@ class Trainer:
         )
 
         trainer.train()
-        best_ckpt = trainer.state.best_model_checkpoint
-        AutoModelForCausalLM.from_pretrained(best_ckpt).save_pretrained(
-            self.output_dir / f"mdl-{self.cfg.run_name}"
+        trainer.model.save_pretrained(
+            self.output_dir / f"mdl-{self.cfg.wandb.run_name}"
         )
 
 

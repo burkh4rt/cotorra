@@ -25,16 +25,16 @@ pl.Config.set_tbl_width_chars(500)
 class Logger(logging.Logger):
     def __init__(self, name: str = __package__):
         super().__init__(name=name)
-        self.setLevel(logging.WARNING)
+        self.setLevel(logging.INFO)
         self.handlers.clear()
 
         formatter = logging.Formatter(
-            fmt="[%(asctime)s] %(message)s", datefmt="%H:%M:%S%Z"
+            fmt="🦜 [%(asctime)s] %(message)s", datefmt="%H:%M:%S%Z"
         )
         ch = RichHandler(
             show_path=False, show_time=False, console=Console(width=200, soft_wrap=True)
         )
-        ch.setLevel(logging.WARNING)
+        ch.setLevel(logging.INFO)
         ch.setFormatter(formatter)
         self.addHandler(ch)
         self.propagate = False

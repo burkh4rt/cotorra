@@ -1,6 +1,6 @@
 # Cotorra: Configurable training
 
-> the feral parakeet of the south side
+> 🦜 the wild parakeet of the south side
 
 <img src="img/monk-parakeets-calumet-park.jpeg" alt="Monk parakeets as seen in
 Calumet Park, Chicago, 12 November 2024" width="400" style="display: block;
@@ -30,6 +30,123 @@ running this code (with Python >= 3.12) as follows:
 ```sh
 uv sync
 uv run cotorra --help
+```
+
+## Context and usage
+
+Suppose you have a dataset of tokenized timelines `tokens_times.parquet` as a
+parquet table with columns:
+
+- `subject_id`
+- `tokens` — the integer token sequence for the subject's timeline.
+- `times` — a parallel list of timestamps, one per token, indicating when each
+  event occurred.
+
+The table will look something like this:
+
+```
+┌────────────────────┬─────────────────┬─────────────────────────────────┐
+│ subject_id         ┆ tokens          ┆ times                           │
+│ ---                ┆ ---             ┆ ---                             │
+│ str                ┆ list[u32]       ┆ list[datetime[μs]]              │
+╞════════════════════╪═════════════════╪═════════════════════════════════╡
+│ 20002103           ┆ [20, 350, … 21] ┆ [2116-05-08 02:45:00, 2116-05-… │
+│ 20008372           ┆ [20, 350, … 21] ┆ [2110-10-30 13:03:00, 2110-10-… │
+│ …                  ┆ …               ┆ …                               │
+│ 29994865           ┆ [20, 364, … 21] ┆ [2111-01-28 21:49:00, 2111-01-… │
+└────────────────────┴─────────────────┴─────────────────────────────────┘
+```
+
+You also have a `tokenizer.yaml`, a plain yaml file that contains information
+about the configuration, learned vocabulary, and bins. This file is sufficient to
+reconstitute the tokenizer object. We only need this file to contain a lookup
+table:
+
+```yaml
+lookup:
+  UNK: 0
+  ADMN//direct: 1
+  ADMN//ed: 2
+  ADMN//elective: 3
+  AGE//age_Q0: 4
+  ...
+```
+
+Finally, we need `subject_splits.parquet` which is a table listing out all
+subject_id's and their corresponding split assignment (with splits: `train`,
+`tuning`, and `held_out`):
+
+```
+┌────────────┬──────────┐
+│ subject_id ┆ split    │
+│ ---        ┆ ---      │
+│ str        ┆ str      │
+╞════════════╪══════════╡
+│ 21081215   ┆ train    │
+│ 20302177   ┆ train    │
+│ …          ┆ …        │
+│ 28150003   ┆ held_out │
+│ 22151813   ┆ held_out │
+└────────────┴──────────┘
+```
+
+> [!TIP] For getting your data to this point, check out our configurable collator
+> / tokenizer: [☕️ cocoa](https://github.com/bbj-lab/cocoa)
+
+Given these things, we want to train a model to predict the next token in a
+subject's timeline given their complete history or context up to this point. This
+package is designed to do that in a configurable way.
+
+We provide a CLI with the following command:
+
+```sh
+# train a model using the provided configurations
+cotorra [-o OUTPUT_DIR]
+```
+
+## Configuration
+
+This library can be extensively customized for your use purposes through a yaml
+configuration, as opposed to having to having to write python.
+
+#### Main configuration ([example](config/main.yaml))
+
+- **processed_data_home**: Path to processed data (tokenized timelines, splits,
+  tokenizer config).
+- **model_config**: Path to the model configuration YAML (e.g.,
+  config/model/llama-32-lite.yaml).
+- **max_seq_len**: Maximum sequence length for model input.
+- **n_epochs**: Number of epochs (handled in the dataloader, not the trainer).
+- **wandb**:
+  - **project**: Weights & Biases project name for experiment tracking.
+  - **run_name**: Name for the current run.
+- **output_dir**: Directory to save model outputs and checkpoints.
+- **tokens_of_interest**: List of special tokens to upweight during training.
+- **toi_weight**: Weight multiplier for tokens of interest in the loss function.
+- **training_args**: Arguments passed to HuggingFace
+  [Trainer's TrainingArguments](https://huggingface.co/docs/transformers/en/main_classes/trainer#transformers.TrainingArguments)
+
+#### Model configuration ([example](config/model/llama-32-lite.yaml))
+
+- **model_name**: Name or path of the model (e.g., meta-llama/Llama-3.2-1B).
+- **model_args**: Model architecture parameters (these are all passed directly to
+  [Huggingface autoconfig](https://huggingface.co/docs/transformers/en/model_doc/auto)
+  object)
+
+### Customizing configuration and programmatic overrides
+
+To use a different dataset or schema, create new YAML files under
+`config/collation/` and `config/tokenization/` and update the paths in
+`config/main.yaml`, or pass your options directly to the `Trainer` object. The
+`Trainer` class accepts `**kwargs` that are merged on top of the YAML config via
+OmegaConf, so any config value can be overridden programmatically:
+
+```python
+from cotorra.trainer import Trainer
+
+# Override config values at instantiation
+trainer = Trainer(data_home="~/other/data", output_dir="~/other/output")
+trainer.train()
 ```
 
 [^1] L. Gersony, "The Quiet Victory of Chicago’s Monk Parakeets," _The Chicago

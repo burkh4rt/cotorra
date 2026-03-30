@@ -4,20 +4,14 @@ processed_data_home: /mnt/bbj-lab/users/burkh4rt/cocoa/processed
 # ~/cocoa/processed
 # /gpfs/data/bbj-lab/users/burkh4rt/cocoa/processed
 
-max_seq_len: !!int 4096
-
 model_config: ./config/model/llama-32-lite.yaml
+max_seq_len: !!int 4096
+n_epochs: !!int 2 # handled in the dataloader, not the trainer
 
 wandb:
   project: cotorra
-  run_name: cotorra-llama-32
+  run_name: &run_name cotorra-llama-32
 output_dir: ./output
-
-per_device_train_batch_size: !!int 16
-per_device_eval_batch_size: !!int 16
-eval_strategy: steps
-save_strategy: best
-n_epochs: !!int 3
 
 tokens_of_interest:
   - XFR-IN//icu
@@ -25,3 +19,16 @@ tokens_of_interest:
   - DSCG//expired
   - DSCG//hospice
 toi_weight: !!float 10
+
+training_args:
+  report_to: wandb
+  run_name: *run_name
+  per_device_train_batch_size: !!int 16
+  per_device_eval_batch_size: !!int 16
+  save_total_limit: !!int 1
+  metric_for_best_model: eval_loss
+  load_best_model_at_end: !!bool true
+  greater_is_better: !!bool false
+  eval_strategy: steps
+  save_strategy: best
+  ddp_find_unused_parameters: !!bool false
