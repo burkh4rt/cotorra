@@ -90,8 +90,11 @@ subject_id's and their corresponding split assignment (with splits: `train`,
 └────────────┴──────────┘
 ```
 
-> [!TIP] For getting your data to this point, check out our configurable collator
-> / tokenizer: [☕️ cocoa](https://github.com/bbj-lab/cocoa)
+<!-- prettier-ignore-start -->
+> [!TIP]
+> For getting your data to this point, check out our configurable
+> collator / tokenizer: [☕️ cocoa](https://github.com/bbj-lab/cocoa)
+<!-- prettier-ignore-end -->
 
 Given these things, we want to train a model to predict the next token in a
 subject's timeline given their complete history or context up to this point. This
@@ -101,7 +104,10 @@ We provide a CLI with the following command:
 
 ```sh
 # train a model using the provided configurations
-cotorra [-o OUTPUT_DIR]
+cotorra train [--output OUTPUT_DIR] [--verbose]
+
+# hyperparameter tuning
+cotorra tune [--output OUTPUT_DIR] [--verbose]
 ```
 
 ## Configuration
@@ -156,7 +162,7 @@ https://chicagomaroon.com/28830/grey-city/quiet-protest-chicagos-monk-parakeets/
 <!--
 
 ```
-systemd-run --scope --user tmux new -s co || tmux a -t co
+tmux new -s co || tmux a -t co
 ```
 
 Send to randi:
@@ -164,14 +170,14 @@ Send to randi:
 rsync -avht \
  --delete \
  --exclude "output/" \
-  --exclude "wandb/" \
+ --exclude "wandb/" \
  --exclude ".venv/" \
  --exclude ".idea/" \
  ~/Documents/chicago/cotorra \
  randi:/gpfs/data/bbj-lab/users/burkh4rt
 ```
 
-Send to bbj-lab2:
+Send to bbj-lab1:
 ```
 rsync -avht \
  --delete \
@@ -181,6 +187,17 @@ rsync -avht \
  --exclude ".idea/" \
  ~/Documents/chicago/cotorra \
  bbj-lab1:~
+```
+
+```
+sbatch \
+  --job-name=🦜-train \
+  --output=./logs/%j-%x.stdout \
+  --partition=gpudev \
+  --gres=gpu:1 \
+  --time=24:00:00 \
+  --chdir=/gpfs/data/bbj-lab/users/burkh4rt/cotorra \
+  --wrap="~/micromamba/bin/uv run cotorra train"
 ```
 
 -->

@@ -6,7 +6,9 @@ logging
 
 import logging
 
+import numpy as np
 import polars as pl
+import torch as t
 from rich.console import Console
 from rich.logging import RichHandler
 
@@ -38,6 +40,22 @@ class Logger(logging.Logger):
         ch.setFormatter(formatter)
         self.addHandler(ch)
         self.propagate = False
+
+    def summarize_trained_model(
+        self, model, bos_token_id, reverse, n_samp=3, max_len=2048
+    ):
+        for i in range(n_samp):
+            sample = model.generate(
+                t.Tensor([[bos_token_id]]).to(model.device, dtype=t.int32),
+                max_length=max_len,
+                do_sample=True,
+                top_k=len(reverse),
+            )
+            self.info(
+                "Sample {}: {}".format(
+                    i + 1, np.vectorize(reverse.get)(sample.cpu().numpy()).tolist()
+                )
+            )
 
 
 if __name__ == "__main__":

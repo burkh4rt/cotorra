@@ -1,12 +1,13 @@
 %YAML 1.2
 ---
-processed_data_home: /mnt/bbj-lab/users/burkh4rt/cocoa/processed
+processed_data_home: /gpfs/data/bbj-lab/users/burkh4rt/cocoa/processed
 # ~/cocoa/processed
 # /gpfs/data/bbj-lab/users/burkh4rt/cocoa/processed
+# /mnt/bbj-lab/users/burkh4rt/cocoa/processed
 
-model_config: ./config/model/llama-32-lite.yaml
+model_config: ./config/model/llama-32.yaml
 max_seq_len: !!int 4096
-n_epochs: !!int 2 # handled in the dataloader, not the trainer
+n_epochs: !!int 5
 
 wandb:
   project: cotorra
@@ -32,3 +33,13 @@ training_args:
   eval_strategy: steps
   save_strategy: best
   ddp_find_unused_parameters: !!bool false
+  neftune_noise_alpha: !!float 5.0
+  auto_find_batch_size: !!bool true
+  learning_rate: !!float 2e-4
+  gradient_accumulation_steps: !!int 1
+  max_steps: !!int 3
+
+tuning_args:
+  direction: minimize
+  backend: optuna
+  n_trials: !!int 10

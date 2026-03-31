@@ -39,36 +39,27 @@ class Loader:
             self.processed_data_home / "tokenizer.yaml"
         )
 
-        if not (
-            (self.processed_data_home / "training_tokens_times.parquet").is_file()
-            and (self.processed_data_home / "tuning_tokens_times.parquet").is_file()
-        ):
+        to_tt = self.processed_data_home / "tokens_times.parquet"
+        tr_tt = self.processed_data_home / "training_tokens_times.parquet"
+        tu_tt = self.processed_data_home / "tuning_tokens_times.parquet"
+        if (
+            not tr_tt.is_file()
+            or not to_tt.is_file()
+            or (to_tt.stat().st_mtime > tr_tt.stat().st_mtime)
+        ):  # pull out training and tuning sets if not already done
+            # or if tokens have been updated
             self.subject_splits = pl.scan_parquet(
                 self.processed_data_home / "subject_splits.parquet"
             )
-            self.tokens_times = pl.scan_parquet(
-                self.processed_data_home / "tokens_times.parquet"
-            )
+            self.tokens_times = pl.scan_parquet(to_tt)
             (tt := self.tokens_times.join(self.subject_splits, on="subject_id")).filter(
                 pl.col("split") == "train"
-            ).drop("split").sink_parquet(
-                self.processed_data_home / "training_tokens_times.parquet"
-            )
-            tt.filter(pl.col("split") == "tuning").drop("split").sink_parquet(
-                self.processed_data_home / "tuning_tokens_times.parquet"
-            )
+            ).drop("split").sink_parquet(tr_tt)
+            tt.filter(pl.col("split") == "tuning").drop("split").sink_parquet(tu_tt)
 
         self.dataset = (
             ds.load_dataset(
-                "parquet",
-                data_files={
-                    "training": str(
-                        self.processed_data_home / "training_tokens_times.parquet"
-                    ),
-                    "tuning": str(
-                        self.processed_data_home / "tuning_tokens_times.parquet"
-                    ),
-                },
+                "parquet", data_files={"training": str(tr_tt), "tuning": str(tu_tt)}
             )
             .rename_column("tokens", "input_ids")
             .remove_columns(["subject_id", "times"])
