@@ -1,6 +1,6 @@
 %YAML 1.2
 ---
-processed_data_home: /gpfs/data/bbj-lab/users/burkh4rt/cocoa/processed
+processed_data_home: ../cocoa/processed
 # ~/cocoa/processed
 # /gpfs/data/bbj-lab/users/burkh4rt/cocoa/processed
 # /mnt/bbj-lab/users/burkh4rt/cocoa/processed
@@ -11,15 +11,19 @@ n_epochs: !!int 5
 
 wandb:
   project: cotorra
-  run_name: &run_name cotorra-llama-32
+  run_name: &run_name cotorra-llama-32-custom-loss
 output_dir: ./output
 
-tokens_of_interest:
-  - XFR-IN//icu
-  - RESP//imv
-  - DSCG//expired
-  - DSCG//hospice
-toi_weight: !!float 10
+custom_loss: !!bool true
+quantile_token_loss:
+  qt_weight: !!float 0.5
+label_weighted_loss:
+  tokens_of_interest:
+    - XFR-IN//icu
+    - RESP//imv
+    - DSCG//expired
+    - DSCG//hospice
+  toi_weight: !!float 10
 
 training_args:
   report_to: wandb
@@ -37,7 +41,6 @@ training_args:
   auto_find_batch_size: !!bool true
   learning_rate: !!float 2e-4
   gradient_accumulation_steps: !!int 1
-  max_steps: !!int 3
 
 tuning_args:
   direction: minimize

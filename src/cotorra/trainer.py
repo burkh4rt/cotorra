@@ -7,7 +7,6 @@ train a model
 import os
 import pathlib
 
-import numpy as np
 import torch as t
 from omegaconf import OmegaConf
 from transformers import (
@@ -19,6 +18,7 @@ from transformers import (
 from transformers import Trainer as t_Trainer
 
 from cotorra.loader import Loader
+from cotorra.loss import Loss
 from cotorra.reporter import Logger
 
 
@@ -43,16 +43,12 @@ class Trainer:
         self.loader = Loader(**self.cfg)
         self.logger = Logger()
 
-        self.vocab = np.array(
-            sorted(self.tkzr_cfg.lookup, key=self.tkzr_cfg.lookup.get)
-        )
-        self.toi_flag = np.isin(self.vocab, self.cfg.tokens_of_interest).astype(int)
-        self.weights = t.Tensor((self.cfg.toi_weight - 1) * self.toi_flag + 1)
-
         self.trainer = t_Trainer(
             model_init=self.model_init,
             data_collator=self.collate_fn,
-            compute_loss_func=self.custom_loss if self.cfg.toi_weight != 1.0 else None,
+            compute_loss_func=Loss(self.cfg, self.tkzr_cfg).custom_loss
+            if self.cfg.custom_loss
+            else None,
             train_dataset=self.loader.get_training_data(),
             eval_dataset=self.loader.get_tuning_data(),
             args=TrainingArguments(
@@ -85,14 +81,6 @@ class Trainer:
     def collate_fn(batch):
         input_ids = t.stack([x["input_ids"] for x in batch])
         return {"input_ids": input_ids, "labels": input_ids}
-
-    def custom_loss(self, outputs, labels, **kwargs):
-        logits = outputs.logits  # (batch, seq_len, vocab_size)
-        shift_logits = logits[:, :-1, :].contiguous()
-        shift_labels = labels[:, 1:].contiguous()
-        return t.nn.CrossEntropyLoss(
-            weight=self.weights.to(logits.device, dtype=logits.dtype)
-        )(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
 
     def train(self, verbose=False):
         self.trainer.train()

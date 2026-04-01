@@ -129,15 +129,22 @@ configuration, as opposed to having to having to write python.
 - **output_dir**: Directory to save model outputs and checkpoints.
 - **tokens_of_interest**: List of special tokens to upweight during training.
 - **toi_weight**: Weight multiplier for tokens of interest in the loss function.
-- **training_args**: Arguments passed to HuggingFace
-  [Trainer's TrainingArguments](https://huggingface.co/docs/transformers/en/main_classes/trainer#transformers.TrainingArguments)
+- **training_args**: Arguments passed to HuggingFace's
+  [`TrainingArguments`](https://huggingface.co/docs/transformers/en/main_classes/trainer#transformers.TrainingArguments)
+- **tuning_args**: Arguments passed to HuggingFace's
+  [`hyperparameter_search`](https://huggingface.co/docs/transformers/hpo_train?backends=Optuna)
+
+<!-- prettier-ignore-start -->
+> [!NOTE]
+> You can also configure customizable loss functions here.
+<!-- prettier-ignore-end -->
 
 #### Model configuration ([example](config/model/llama-32-lite.yaml))
 
 - **model_name**: Name or path of the model (e.g., meta-llama/Llama-3.2-1B).
-- **model_args**: Model architecture parameters (these are all passed directly to
-  [Huggingface autoconfig](https://huggingface.co/docs/transformers/en/model_doc/auto)
-  object)
+- **model_args**: Model architecture parameters passed directly to HuggingFace's
+  [`AutoConfig`](https://huggingface.co/docs/transformers/en/model_doc/auto)
+  object
 
 ### Customizing configuration and programmatic overrides
 
