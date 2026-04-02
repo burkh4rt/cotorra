@@ -14,11 +14,12 @@ from omegaconf import OmegaConf
 
 
 def batched_iter(dset: ds.Dataset, seq_len: int):
-    dq = collections.deque()
+    dq = {k: collections.deque() for k in dset.column_names}
     for eg in iter(dset):
-        dq.extend(eg["input_ids"])
-        while len(dq) >= seq_len:
-            yield {"input_ids": [dq.popleft() for _ in range(seq_len)]}
+        for k in dq:
+            dq[k].extend(list(eg[k]))
+        while len(dq[list(dq.keys())[0]]) >= seq_len:
+            yield {k: [dq[k].popleft() for _ in range(seq_len)] for k in dq}
 
 
 class Loader:
@@ -51,7 +52,11 @@ class Loader:
             self.subject_splits = pl.scan_parquet(
                 self.processed_data_home / "subject_splits.parquet"
             )
-            self.tokens_times = pl.scan_parquet(to_tt)
+            self.tokens_times = pl.scan_parquet(to_tt).with_columns(
+                s_elapsed=pl.col("times")
+                .list.diff()
+                .list.eval(pl.element().dt.total_seconds().fill_null(0.0))
+            )
             (tt := self.tokens_times.join(self.subject_splits, on="subject_id")).filter(
                 pl.col("split") == "train"
             ).drop("split").sink_parquet(tr_tt)
@@ -62,7 +67,11 @@ class Loader:
                 "parquet", data_files={"training": str(tr_tt), "tuning": str(tu_tt)}
             )
             .rename_column("tokens", "input_ids")
-            .remove_columns(["subject_id", "times"])
+            .remove_columns(
+                ["subject_id", "times", "s_elapsed"]
+                if "time_based_rope" not in self.cfg
+                else ["subject_id", "times"]
+            )
         )
 
     def get_training_data(self):
@@ -88,3 +97,5 @@ class Loader:
 
 if __name__ == "__main__":
     self = Loader()
+    self.get_training_data()
+    # breakpoint()

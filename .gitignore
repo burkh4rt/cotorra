@@ -1,6 +1,7 @@
 # idiosyncratic
 .venv
 .idea
+output
 processed
 wandb
 

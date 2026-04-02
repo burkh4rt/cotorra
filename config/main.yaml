@@ -7,7 +7,7 @@ processed_data_home: ../cocoa/processed
 
 model_config: ./config/model/llama-32.yaml
 max_seq_len: !!int 4096
-n_epochs: !!int 5
+n_epochs: !!int 2
 
 wandb:
   project: cotorra
@@ -25,6 +25,9 @@ label_weighted_loss:
     - DSCG//hospice
   toi_weight: !!float 10
 
+time_based_rope:
+  sec_per_pos_id: !!int 300
+
 training_args:
   report_to: wandb
   run_name: *run_name
@@ -41,6 +44,7 @@ training_args:
   auto_find_batch_size: !!bool true
   learning_rate: !!float 2e-4
   gradient_accumulation_steps: !!int 1
+  remove_unused_columns: !!bool false # otherwise `s_elapsed` is automatically dropped
 
 tuning_args:
   direction: minimize

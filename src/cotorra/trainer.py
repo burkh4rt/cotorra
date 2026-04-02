@@ -77,10 +77,17 @@ class Trainer:
         )
         return mdl
 
-    @staticmethod
-    def collate_fn(batch):
+    def collate_fn(self, batch):
         input_ids = t.stack([x["input_ids"] for x in batch])
-        return {"input_ids": input_ids, "labels": input_ids}
+        if "time_based_rope" not in self.cfg:
+            return {"input_ids": input_ids, "labels": input_ids}
+        else:
+            p_ids = (
+                t.stack([x["s_elapsed"] for x in batch])
+                / self.cfg.time_based_rope.sec_per_pos_id
+            )
+            p_ids += t.arange(p_ids.shape[-1], device=p_ids.device, dtype=p_ids.dtype)
+            return {"input_ids": input_ids, "labels": input_ids, "position_ids": p_ids}
 
     def train(self, verbose=False):
         self.trainer.train()
