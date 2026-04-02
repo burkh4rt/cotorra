@@ -1,6 +1,6 @@
 %YAML 1.2
 ---
-processed_data_home: /gpfs/data/bbj-lab/users/burkh4rt/cocoa/processed
+processed_data_home: ../cocoa/processed
 # ~/cocoa/processed
 # /gpfs/data/bbj-lab/users/burkh4rt/cocoa/processed
 # /mnt/bbj-lab/users/burkh4rt/cocoa/processed
@@ -20,6 +20,9 @@ tokens_of_interest:
   - DSCG//expired
   - DSCG//hospice
 toi_weight: !!float 10
+
+time_based_rope:
+  sec_per_pos_id: !!int 300
 
 training_args:
   report_to: wandb

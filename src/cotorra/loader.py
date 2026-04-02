@@ -14,11 +14,20 @@ from omegaconf import OmegaConf
 
 
 def batched_iter(dset: ds.Dataset, seq_len: int):
-    dq = collections.deque()
-    for eg in iter(dset):
-        dq.extend(eg["input_ids"])
-        while len(dq) >= seq_len:
-            yield {"input_ids": [dq.popleft() for _ in range(seq_len)]}
+    dq = {k: collections.deque() for k in dset.column_names}
+    for eg in dset:
+        for k in dq:
+            dq[k].extend(list(eg[k]))
+        while len(dq[list(dq.keys())[0]]) >= seq_len:
+            yield {k: [dq[k].popleft() for _ in range(seq_len)] for k in dq}
+
+
+def to_relative(eg, scale=1.0):
+    eg["times"] = [
+        (y.timestamp() - eg["times"][0].timestamp()) / scale + i
+        for i, y in enumerate(eg["times"])
+    ]
+    return eg
 
 
 class Loader:
@@ -62,7 +71,16 @@ class Loader:
                 "parquet", data_files={"training": str(tr_tt), "tuning": str(tu_tt)}
             )
             .rename_column("tokens", "input_ids")
-            .remove_columns(["subject_id", "times"])
+            .map(  # very slow; may want to move into polars
+                lambda eg: to_relative(
+                    eg, scale=self.cfg.time_based_rope.sec_per_pos_id
+                )
+            )
+            .remove_columns(
+                ["subject_id", "times"]
+                if "time_based_rope" not in self.cfg
+                else ["subject_id"]
+            )
         )
 
     def get_training_data(self):
@@ -88,3 +106,4 @@ class Loader:
 
 if __name__ == "__main__":
     self = Loader()
+    self.get_training_data()
