@@ -7,7 +7,7 @@ processed_data_home: ../cocoa/processed
 
 model_config: ./config/model/llama-32.yaml
 max_seq_len: !!int 4096
-n_epochs: !!int 5
+n_epochs: !!int 2
 
 wandb:
   project: cotorra
@@ -40,7 +40,7 @@ training_args:
   auto_find_batch_size: !!bool true
   learning_rate: !!float 2e-4
   gradient_accumulation_steps: !!int 1
-  max_steps: !!int 3
+  remove_unused_columns: !!bool false # otherwise `s_elapsed` is automatically dropped
 
 tuning_args:
   direction: minimize

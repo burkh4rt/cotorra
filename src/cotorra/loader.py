@@ -15,19 +15,11 @@ from omegaconf import OmegaConf
 
 def batched_iter(dset: ds.Dataset, seq_len: int):
     dq = {k: collections.deque() for k in dset.column_names}
-    for eg in dset:
+    for eg in iter(dset):
         for k in dq:
             dq[k].extend(list(eg[k]))
         while len(dq[list(dq.keys())[0]]) >= seq_len:
             yield {k: [dq[k].popleft() for _ in range(seq_len)] for k in dq}
-
-
-def to_relative(eg, scale=1.0):
-    eg["times"] = [
-        (y.timestamp() - eg["times"][0].timestamp()) / scale + i
-        for i, y in enumerate(eg["times"])
-    ]
-    return eg
 
 
 class Loader:
@@ -60,7 +52,11 @@ class Loader:
             self.subject_splits = pl.scan_parquet(
                 self.processed_data_home / "subject_splits.parquet"
             )
-            self.tokens_times = pl.scan_parquet(to_tt)
+            self.tokens_times = pl.scan_parquet(to_tt).with_columns(
+                s_elapsed=pl.col("times")
+                .list.diff()
+                .list.eval(pl.element().dt.total_seconds().fill_null(0.0))
+            )
             (tt := self.tokens_times.join(self.subject_splits, on="subject_id")).filter(
                 pl.col("split") == "train"
             ).drop("split").sink_parquet(tr_tt)
@@ -71,15 +67,10 @@ class Loader:
                 "parquet", data_files={"training": str(tr_tt), "tuning": str(tu_tt)}
             )
             .rename_column("tokens", "input_ids")
-            .map(  # very slow; may want to move into polars
-                lambda eg: to_relative(
-                    eg, scale=self.cfg.time_based_rope.sec_per_pos_id
-                )
-            )
             .remove_columns(
-                ["subject_id", "times"]
+                ["subject_id", "times", "s_elapsed"]
                 if "time_based_rope" not in self.cfg
-                else ["subject_id"]
+                else ["subject_id", "times"]
             )
         )
 
@@ -107,3 +98,4 @@ class Loader:
 if __name__ == "__main__":
     self = Loader()
     self.get_training_data()
+    # breakpoint()
