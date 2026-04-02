@@ -11,15 +11,19 @@ n_epochs: !!int 2
 
 wandb:
   project: cotorra
-  run_name: &run_name cotorra-llama-32
+  run_name: &run_name cotorra-llama-32-custom-loss
 output_dir: ./output
 
-tokens_of_interest:
-  - XFR-IN//icu
-  - RESP//imv
-  - DSCG//expired
-  - DSCG//hospice
-toi_weight: !!float 10
+custom_loss: !!bool true
+quantile_token_loss:
+  qt_weight: !!float 0.5
+label_weighted_loss:
+  tokens_of_interest:
+    - XFR-IN//icu
+    - RESP//imv
+    - DSCG//expired
+    - DSCG//hospice
+  toi_weight: !!float 10
 
 time_based_rope:
   sec_per_pos_id: !!int 300
