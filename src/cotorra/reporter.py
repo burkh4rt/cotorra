@@ -46,7 +46,7 @@ class Logger(logging.Logger):
     ):
         for i in range(n_samp):
             sample = model.generate(
-                t.Tensor([[bos_token_id]]).to(model.device, dtype=t.int32),
+                t.tensor([[bos_token_id]], dtype=t.int32).to(model.device),
                 max_length=max_len,
                 do_sample=True,
                 top_k=len(reverse),
