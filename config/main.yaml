@@ -54,5 +54,5 @@ tuning_args:
 
 extract:
   max_len: *max_len
-  batch_size: !!int 2
+  batch_size: !!int 64
   time_limit_s: !!int 86400 # 24 hours

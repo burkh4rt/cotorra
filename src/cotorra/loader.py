@@ -41,6 +41,9 @@ class Loader:
         )
 
         to_tt = self.processed_data_home / "tokens_times.parquet"
+        assert to_tt.is_file(), FileNotFoundError(
+            f"Expected token and time data at {to_tt}, but not found."
+        )
         tr_tt = self.processed_data_home / "training_tokens_times.parquet"
         tu_tt = self.processed_data_home / "tuning_tokens_times.parquet"
         te_tt = self.processed_data_home / "testing_tokens_times.parquet"
@@ -52,8 +55,9 @@ class Loader:
                 self.processed_data_home / "subject_splits.parquet"
             )
             self.tokens_times = pl.scan_parquet(to_tt).with_columns(
-                s_elapsed=pl.col("times")
-                .list.eval((pl.element() - pl.element().first()).dt.total_seconds())
+                s_elapsed=pl.col("times").list.eval(
+                    (pl.element() - pl.element().first()).dt.total_seconds()
+                )
             )
             (tt := self.tokens_times.join(self.subject_splits, on="subject_id")).filter(
                 pl.col("split") == "train"

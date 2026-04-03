@@ -50,12 +50,11 @@ class Extractor:
 
     def collate_fn(self, batch, time_limit_s: int = None):
         ml = t.tensor(self.cfg.get("extract.max_len", 4096))
-        break_pt = [
-            t.minimum(t.searchsorted(x, time_limit_s), ml)
+        break_pt = (
+            [t.minimum(t.searchsorted(x, time_limit_s), ml) for x in batch["s_elapsed"]]
             if time_limit_s is not None
-            else ml
-            for x in batch["s_elapsed"]
-        ]
+            else [ml] * len(batch["input_ids"])
+        )
         input_ids = pad_sequence(
             [x[:bk] for bk, x in zip(break_pt, batch["input_ids"])],
             batch_first=True,
@@ -83,7 +82,7 @@ class Extractor:
             (hits := (collated["input_ids"] == self.model.config.eos_token_id)).any(
                 dim=-1
             ),
-            hits.to(int).argmax(dim=-1)
+            hits.long().argmax(dim=-1)
             - 1,  # -1 to get the last token before break point
             collated["input_ids"].shape[-1] - 1,
         )
