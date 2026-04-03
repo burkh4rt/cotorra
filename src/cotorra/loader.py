@@ -53,8 +53,7 @@ class Loader:
             )
             self.tokens_times = pl.scan_parquet(to_tt).with_columns(
                 s_elapsed=pl.col("times")
-                .list.diff()
-                .list.eval(pl.element().dt.total_seconds().fill_null(0.0))
+                .list.eval((pl.element() - pl.element().first()).dt.total_seconds())
             )
             (tt := self.tokens_times.join(self.subject_splits, on="subject_id")).filter(
                 pl.col("split") == "train"

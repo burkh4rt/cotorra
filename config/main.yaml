@@ -6,7 +6,7 @@ processed_data_home: ../cocoa/processed
 # /mnt/bbj-lab/users/burkh4rt/cocoa/processed
 
 model_config: ./config/model/llama-32.yaml
-max_seq_len: !!int 4096
+max_seq_len: !!int &max_len 4096
 n_epochs: !!int 2
 
 wandb:
@@ -52,4 +52,7 @@ tuning_args:
   backend: optuna
   n_trials: !!int 10
 
-extract_batch_size: 16
+extract:
+  max_len: *max_len
+  batch_size: !!int 2
+  time_limit_s: !!int 86400 # 24 hours
