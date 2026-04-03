@@ -43,10 +43,9 @@ class Loader:
         to_tt = self.processed_data_home / "tokens_times.parquet"
         tr_tt = self.processed_data_home / "training_tokens_times.parquet"
         tu_tt = self.processed_data_home / "tuning_tokens_times.parquet"
-        if (
-            not tr_tt.is_file()
-            or not to_tt.is_file()
-            or (to_tt.stat().st_mtime > tr_tt.stat().st_mtime)
+        te_tt = self.processed_data_home / "testing_tokens_times.parquet"
+        if not (tr_tt.is_file() and tu_tt.is_file() and te_tt.is_file()) or (
+            to_tt.stat().st_mtime > tr_tt.stat().st_mtime
         ):  # pull out training and tuning sets if not already done
             # or if tokens have been updated
             self.subject_splits = pl.scan_parquet(
@@ -61,10 +60,16 @@ class Loader:
                 pl.col("split") == "train"
             ).drop("split").sink_parquet(tr_tt)
             tt.filter(pl.col("split") == "tuning").drop("split").sink_parquet(tu_tt)
+            tt.filter(pl.col("split") == "held_out").drop("split").sink_parquet(te_tt)
 
         self.dataset = (
             ds.load_dataset(
-                "parquet", data_files={"training": str(tr_tt), "tuning": str(tu_tt)}
+                "parquet",
+                data_files={
+                    "training": str(tr_tt),
+                    "tuning": str(tu_tt),
+                    "testing": str(te_tt),
+                },
             )
             .rename_column("tokens", "input_ids")
             .remove_columns(

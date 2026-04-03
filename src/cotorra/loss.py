@@ -42,7 +42,9 @@ class Loss:
             self.label_to_q[self.qi_labels] = self.qi_num
 
     def quantile_token_loss(self, outputs, labels, **kwargs):
-        q_logits = outputs.logits[:, :, self.qi_flag]  # (batch, seq_len, vocab_size)
+        q_logits = outputs.logits[
+            :, :, self.qi_labels.to(outputs.logits.device)
+        ]  # (batch, seq_len, vocab_size)
         q_probs = t.softmax(q_logits, dim=-1)
         e_num = q_probs @ self.qi_num.to(q_logits.device, dtype=q_logits.dtype)
         shift_e_num = e_num[:, :-1]
