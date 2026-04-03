@@ -162,9 +162,10 @@ trainer = Trainer(data_home="~/other/data", output_dir="~/other/output")
 trainer.train()
 ```
 
-[^1] L. Gersony, "The Quiet Victory of Chicago’s Monk Parakeets," _The Chicago
-Maroon_, 23 January 2022,
-https://chicagomaroon.com/28830/grey-city/quiet-protest-chicagos-monk-parakeets/
+[^1]:
+    L. Gersony, "The Quiet Victory of Chicago’s Monk Parakeets," _The Chicago
+    Maroon_, 23 January 2022,
+    https://chicagomaroon.com/28830/grey-city/quiet-protest-chicagos-monk-parakeets/
 
 <!--
 

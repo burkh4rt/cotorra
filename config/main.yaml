@@ -6,12 +6,12 @@ processed_data_home: ../cocoa/processed
 # /mnt/bbj-lab/users/burkh4rt/cocoa/processed
 
 model_config: ./config/model/llama-32.yaml
-max_seq_len: !!int 4096
+max_seq_len: !!int &max_len 4096
 n_epochs: !!int 2
 
 wandb:
   project: cotorra
-  run_name: &run_name cotorra-llama-32-custom-loss
+  run_name: &run_name cotorra-t-rope
 output_dir: ./output
 
 custom_loss: !!bool true
@@ -45,8 +45,14 @@ training_args:
   learning_rate: !!float 2e-4
   gradient_accumulation_steps: !!int 1
   remove_unused_columns: !!bool false # otherwise `s_elapsed` is automatically dropped
+  # max_steps: !!int 10 # uncomment for testing purposes only
 
 tuning_args:
   direction: minimize
   backend: optuna
   n_trials: !!int 10
+
+extract:
+  max_len: *max_len
+  batch_size: !!int 64
+  time_limit_s: !!int 86400 # 24 hours

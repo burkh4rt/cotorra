@@ -12,6 +12,7 @@ import typer
 from rich import print
 from rich.console import Console
 
+from cotorra.extractor import Extractor
 from cotorra.trainer import Trainer
 from cotorra.tuner import Tuner
 
@@ -67,6 +68,26 @@ def tune(
         tuner.train(verbose=verbose)
         t1 = time.perf_counter()
         print(f"\n[green]✓[/green] Tuning completed in {t1 - t0:.2f}s.")
+
+
+@app.command()
+def extract(
+    output: Annotated[
+        Optional[pathlib.Path],
+        typer.Option(
+            "--output", "-o", help="Output directory for extracted representations."
+        ),
+    ] = None,
+):
+    """
+    Extract representations from a trained model.
+    """
+    with console.status("[bold green]Extracting representations..."):
+        t0 = time.perf_counter()
+        extractor = Extractor() if output is None else Extractor(output_dir=output)
+        extractor.extract()
+        t1 = time.perf_counter()
+        print(f"\n[green]✓[/green] Extraction completed in {t1 - t0:.2f}s.")
 
 
 def main():
