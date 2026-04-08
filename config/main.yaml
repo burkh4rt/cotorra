@@ -16,7 +16,7 @@ output_dir: ./output
 
 custom_loss: !!bool true
 quantile_token_loss:
-  qt_weight: !!float 0.5
+  qt_weight: !!float 20.0
 label_weighted_loss:
   tokens_of_interest:
     - XFR-IN//icu
@@ -31,8 +31,8 @@ time_based_rope:
 training_args:
   report_to: wandb
   run_name: *run_name
-  per_device_train_batch_size: !!int 16
-  per_device_eval_batch_size: !!int 16
+  per_device_train_batch_size: !!int 8
+  per_device_eval_batch_size: !!int 8
   save_total_limit: !!int 1
   metric_for_best_model: eval_loss
   load_best_model_at_end: !!bool true
@@ -41,11 +41,12 @@ training_args:
   save_strategy: best
   ddp_find_unused_parameters: !!bool false
   neftune_noise_alpha: !!float 5.0
-  auto_find_batch_size: !!bool true
+  # auto_find_batch_size: !!bool true
   learning_rate: !!float 2e-4
   gradient_accumulation_steps: !!int 1
   remove_unused_columns: !!bool false # otherwise `s_elapsed` is automatically dropped
   # max_steps: !!int 10 # uncomment for testing purposes only
+  bf16: !!bool true
 
 tuning_args:
   direction: minimize

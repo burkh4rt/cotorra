@@ -8,9 +8,11 @@ note this code only runs when configured with `custom_loss: !!bool true`
 import numpy as np
 import torch as t
 
+import wandb
+
 
 class Loss:
-    def __init__(self, cfg, tkzr_cfg):
+    def __init__(self, cfg=None, tkzr_cfg=None):
 
         self.cfg = cfg
         self.tkzr_cfg = tkzr_cfg
@@ -28,7 +30,7 @@ class Loss:
 
         if "quantile_token_loss" in self.cfg:
             assert not self.tkzr_cfg.cfg.fused, NotImplementedError(
-                "label_weighted_loss is not formulated for fused tokens"
+                "quantile_token_loss is not formulated for fused tokens"
             )
             self.qi_flag = np.isin(
                 self.vocab, [f"Q{i}" for i in range(self.tkzr_cfg.cfg.n_bins)]
@@ -42,8 +44,9 @@ class Loss:
             self.label_to_q[self.qi_labels] = self.qi_num
 
     def quantile_token_loss(self, outputs, labels, **kwargs):
-        q_logits = outputs.logits[
-            :, :, self.qi_labels.to(outputs.logits.device)
+        logits = outputs.get("logits")
+        q_logits = logits[
+            :, :, self.qi_labels.to(logits.device)
         ]  # (batch, seq_len, vocab_size)
         q_probs = t.softmax(q_logits, dim=-1)
         e_num = q_probs @ self.qi_num.to(q_logits.device, dtype=q_logits.dtype)
@@ -59,7 +62,7 @@ class Loss:
         )
 
     def label_weighted_loss(self, outputs, labels, **kwargs):
-        logits = outputs.logits  # (batch, seq_len, vocab_size)
+        logits = outputs.get("logits")  # (batch, seq_len, vocab_size)
         shift_logits = logits[:, :-1, :].contiguous()
         shift_labels = labels[:, 1:].contiguous()
         return t.nn.CrossEntropyLoss(
@@ -68,10 +71,16 @@ class Loss:
 
     def custom_loss(self, outputs, labels, **kwargs):
         loss = 0.0
+        log = dict()
         if "label_weighted_loss" in self.cfg:
-            loss += self.label_weighted_loss(outputs, labels)
+            label_weighted_loss = self.label_weighted_loss(outputs, labels)
+            log |= {"label_weighted_loss": label_weighted_loss.item()}
+            loss += label_weighted_loss
         if "quantile_token_loss" in self.cfg:
-            loss += self.cfg.quantile_token_loss.qt_weight * self.quantile_token_loss(
-                outputs, labels
-            )
+            quantile_token_loss = self.quantile_token_loss(outputs, labels)
+            log |= {"quantile_token_loss": quantile_token_loss.item()}
+            loss += self.cfg.quantile_token_loss.qt_weight * quantile_token_loss
+        if wandb.run is not None:
+            log |= {"custom_loss": loss.item()}
+            wandb.log(log)
         return loss

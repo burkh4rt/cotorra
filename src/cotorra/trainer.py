@@ -34,13 +34,13 @@ class Trainer:
         mdl_cfg = OmegaConf.load(
             pathlib.Path(main_cfg.model_config).expanduser().resolve()
         )
-        self.cfg = OmegaConf.merge(main_cfg, mdl_cfg, kwargs)
+        self.cfg = OmegaConf.merge(main_cfg, mdl_cfg, OmegaConf.create(kwargs))
         self.processed_data_home = (
             pathlib.Path(self.cfg.processed_data_home).expanduser().resolve()
         )
         self.output_dir = pathlib.Path(self.cfg.output_dir).expanduser().resolve()
         self.tkzr_cfg = OmegaConf.load(self.processed_data_home / "tokenizer.yaml")
-        self.loader = Loader(**self.cfg)
+        self.loader = Loader(self.cfg)
         self.logger = Logger()
 
         self.trainer = t_Trainer(
@@ -49,7 +49,7 @@ class Trainer:
             compute_loss_func=Loss(self.cfg, self.tkzr_cfg).custom_loss
             if self.cfg.custom_loss
             else None,
-            train_dataset=self.loader.get_training_data(),
+            train_dataset=self.loader.get_train_data(),
             eval_dataset=self.loader.get_tuning_data(),
             args=TrainingArguments(
                 output_dir=str(self.output_dir), **self.cfg.training_args
@@ -57,8 +57,8 @@ class Trainer:
             callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
         )
 
-        os.environ["WANDB_PROJECT"] = self.cfg.wandb.project
-        os.environ["WANDB_RUN_NAME"] = self.cfg.wandb.run_name
+        os.environ["WANDB_PROJECT"] = self.cfg.get("wandb.project", "cotorra")
+        os.environ["WANDB_RUN_NAME"] = self.cfg.get("wandb.run_name", "default")
 
     def model_init(self):
         conf_param = dict(

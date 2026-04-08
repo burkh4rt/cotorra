@@ -31,7 +31,7 @@ class Extractor:
         )
         self.output_dir = pathlib.Path(self.cfg.output_dir).expanduser().resolve()
         self.tkzr_cfg = OmegaConf.load(self.processed_data_home / "tokenizer.yaml")
-        self.loader = Loader(**self.cfg)
+        self.loader = Loader(self.cfg)
         self.logger = Logger()
         self.device = (
             "cuda"

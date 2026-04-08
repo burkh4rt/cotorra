@@ -27,11 +27,8 @@ class Loader:
     data into the same file;
     we need to start by fishing out training and validation data"""
 
-    def __init__(self, **kwargs):
-        main_cfg = OmegaConf.load(
-            pathlib.Path("./config/main.yaml").expanduser().resolve()
-        )
-        self.cfg = OmegaConf.merge(main_cfg, kwargs)
+    def __init__(self, cfg=None):
+        self.cfg = cfg
         self.rng = np.random.default_rng(42)
         self.processed_data_home = (
             pathlib.Path(self.cfg.processed_data_home).expanduser().resolve()
@@ -39,40 +36,38 @@ class Loader:
         self.tokenizer_info = OmegaConf.load(
             self.processed_data_home / "tokenizer.yaml"
         )
+        self.splits: tuple = ("train", "tuning", "held_out")
 
-        to_tt = self.processed_data_home / "tokens_times.parquet"
-        assert to_tt.is_file(), FileNotFoundError(
-            f"Expected token and time data at {to_tt}, but not found."
+        tt_all = self.processed_data_home / "tokens_times.parquet"
+        assert tt_all.is_file(), FileNotFoundError(
+            f"Expected token and time data at {tt_all}, but not found."
         )
-        tr_tt = self.processed_data_home / "training_tokens_times.parquet"
-        tu_tt = self.processed_data_home / "tuning_tokens_times.parquet"
-        te_tt = self.processed_data_home / "testing_tokens_times.parquet"
-        if not (tr_tt.is_file() and tu_tt.is_file() and te_tt.is_file()) or (
-            to_tt.stat().st_mtime > tr_tt.stat().st_mtime
+
+        tt_split = {
+            s: self.processed_data_home / f"{s}_tokens_times.parquet"
+            for s in self.splits
+        }
+        if not all(s.is_file() for s in tt_split.values()) or any(
+            tt_all.stat().st_mtime > s.stat().st_mtime for s in tt_split.values()
         ):  # pull out training and tuning sets if not already done
             # or if tokens have been updated
             self.subject_splits = pl.scan_parquet(
                 self.processed_data_home / "subject_splits.parquet"
             )
-            self.tokens_times = pl.scan_parquet(to_tt).with_columns(
+            self.tokens_times = pl.scan_parquet(tt_all).with_columns(
                 s_elapsed=pl.col("times").list.eval(
                     (pl.element() - pl.element().first()).dt.total_seconds()
                 )
             )
-            (tt := self.tokens_times.join(self.subject_splits, on="subject_id")).filter(
-                pl.col("split") == "train"
-            ).drop("split").sink_parquet(tr_tt)
-            tt.filter(pl.col("split") == "tuning").drop("split").sink_parquet(tu_tt)
-            tt.filter(pl.col("split") == "held_out").drop("split").sink_parquet(te_tt)
+            to_split = self.tokens_times.join(self.subject_splits, on="subject_id")
+            for s in self.splits:
+                to_split.filter(pl.col("split") == s).drop("split").sink_parquet(
+                    tt_split[s]
+                )
 
         self.dataset = (
             ds.load_dataset(
-                "parquet",
-                data_files={
-                    "training": str(tr_tt),
-                    "tuning": str(tu_tt),
-                    "testing": str(te_tt),
-                },
+                "parquet", data_files={s: str(tt_split[s]) for s in self.splits}
             )
             .rename_column("tokens", "input_ids")
             .remove_columns(
@@ -82,11 +77,11 @@ class Loader:
             )
         )
 
-    def get_training_data(self):
+    def get_train_data(self):
         return ds.Dataset.from_generator(
             batched_iter,
             gen_kwargs={
-                "dset": self.dataset["training"]
+                "dset": self.dataset[self.splits[0]]
                 .repeat(self.cfg.n_epochs)
                 .shuffle(generator=self.rng),
                 "seq_len": self.cfg.max_seq_len,
@@ -97,7 +92,7 @@ class Loader:
         return ds.Dataset.from_generator(
             batched_iter,
             gen_kwargs={
-                "dset": self.dataset["tuning"],
+                "dset": self.dataset[self.splits[1]],
                 "seq_len": self.cfg.max_seq_len,
             },
         ).with_format("torch")
@@ -105,5 +100,5 @@ class Loader:
 
 if __name__ == "__main__":
     self = Loader()
-    self.get_training_data()
+    self.get_train_data()
     # breakpoint()
