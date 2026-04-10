@@ -57,8 +57,12 @@ class Trainer:
             callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
         )
 
-        os.environ["WANDB_PROJECT"] = self.cfg.get("wandb.project", "cotorra")
-        os.environ["WANDB_RUN_NAME"] = self.cfg.get("wandb.run_name", "default")
+        os.environ["WANDB_PROJECT"] = self.cfg.get("wandb", {}).get(
+            "project", "cotorra"
+        )
+        os.environ["WANDB_RUN_NAME"] = self.cfg.get("wandb", {}).get(
+            "run_name", "cotorra"
+        )
 
     def model_init(self):
         conf_param = dict(

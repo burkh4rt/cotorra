@@ -49,7 +49,7 @@ class Extractor:
         self.ds = None
 
     def collate_fn(self, batch, time_limit_s: int = None):
-        ml = t.tensor(self.cfg.get("extract.max_len", 4096))
+        ml = t.tensor(self.cfg.get("extract", {}).get("max_len", 4096))
         break_pt = (
             [t.minimum(t.searchsorted(x, time_limit_s), ml) for x in batch["s_elapsed"]]
             if time_limit_s is not None
@@ -76,7 +76,7 @@ class Extractor:
 
     def extract_final(self, batch):
         collated = self.collate_fn(
-            batch, time_limit_s=self.cfg.get("extract.time_limit_s", None)
+            batch, time_limit_s=self.cfg.get("extract", {}).get("time_limit_s", None)
         )
         first_eos = t.where(
             (hits := (collated["input_ids"] == self.model.config.eos_token_id)).any(
@@ -99,7 +99,7 @@ class Extractor:
         self.ds = self.loader.dataset.with_format("torch").map(
             self.extract_final,
             batched=True,
-            batch_size=self.cfg.get("extract.batch_size", 8),
+            batch_size=self.cfg.get("extract", {}).get("batch_size", 8),
         )
         for split, dset in self.ds.items():
             dset.to_parquet(self.processed_data_home / f"features-{split}.parquet")

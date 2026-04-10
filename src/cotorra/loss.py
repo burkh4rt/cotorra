@@ -9,6 +9,7 @@ import numpy as np
 import torch as t
 
 import wandb
+from cotorra.reporter import Logger
 
 
 class Loss:
@@ -19,6 +20,7 @@ class Loss:
         self.vocab = np.array(
             sorted(self.tkzr_cfg.lookup, key=self.tkzr_cfg.lookup.get)
         )
+        self.logger = Logger()
 
         if "label_weighted_loss" in self.cfg:
             self.toi_flag = np.isin(
@@ -29,37 +31,48 @@ class Loss:
             )
 
         if "quantile_token_loss" in self.cfg:
-            assert not self.tkzr_cfg.cfg.fused, NotImplementedError(
-                "quantile_token_loss is not formulated for fused tokens"
+            if self.tkzr_cfg.cfg.fused:
+                self.logger.warn(
+                    "Quantile token loss is still experimental for fused tokenizers."
+                )
+
+            self.q_type = np.array(
+                [
+                    v.endswith(tuple(f"Q{i}" for i in range(self.tkzr_cfg.cfg.n_bins)))
+                    for v in self.vocab
+                ]
             )
-            self.qi_flag = np.isin(
-                self.vocab, [f"Q{i}" for i in range(self.tkzr_cfg.cfg.n_bins)]
+            self.qt_cats, self.qt_vals = map(
+                np.array,
+                zip(*np.char.rsplit(self.vocab[self.q_type], sep="Q", maxsplit=1)),
             )
-            self.qi_labels = t.nonzero(t.tensor(self.qi_flag), as_tuple=True)[0]
-            self.qi_num = t.tensor(
-                (np.char.replace(self.vocab[self.qi_flag], "Q", "").astype(int) + 0.5)
-                / self.tkzr_cfg.cfg.n_bins
+            self.qt_nums = (
+                t.tensor(self.qt_vals.astype(int) + 0.5) / self.tkzr_cfg.cfg.n_bins
             ).to(dtype=t.float32)
             self.label_to_q = t.full((len(self.vocab),), float("nan"))
-            self.label_to_q[self.qi_labels] = self.qi_num
+            self.label_to_q[self.q_type] = self.qt_nums
+            self.label_to_cat = t.full((len(self.vocab),), -1)
+            self.label_to_cat[self.q_type] = t.tensor(
+                np.unique(self.qt_cats, return_inverse=True)[1]
+            )
+            self.n_cats: int = self.label_to_cat.max().item() + 1
 
     def quantile_token_loss(self, outputs, labels, **kwargs):
-        logits = outputs.get("logits")
-        q_logits = logits[
-            :, :, self.qi_labels.to(logits.device)
-        ]  # (batch, seq_len, vocab_size)
-        q_probs = t.softmax(q_logits, dim=-1)
-        e_num = q_probs @ self.qi_num.to(q_logits.device, dtype=q_logits.dtype)
-        shift_e_num = e_num[:, :-1]
-        shift_labels_num = self.label_to_q.to(labels.device, dtype=q_logits.dtype)[
-            labels[:, 1:]
-        ]
-        mask = ~t.isnan(shift_labels_num)
-        return (
-            t.nn.MSELoss()(shift_e_num[mask], shift_labels_num[mask])
-            if mask.any()
-            else 0.0
-        )
+        loss = 0.0
+        shift_logits = outputs.get("logits")[:, :-1].contiguous()
+        shift_labels = labels[:, 1:].contiguous()
+        for i in range(self.n_cats):
+            mask = self.label_to_cat.to(device=labels.device)[shift_labels] == i
+            if not mask.any():
+                continue
+            shift_labels = shift_labels[mask]
+            shift_logits = shift_logits[mask][:, self.label_to_cat == i]
+            shift_preds = t.softmax(shift_logits, dim=-1) @ (
+                self.label_to_q[self.label_to_cat == i]
+            ).to(device=shift_logits.device)
+            shift_true = self.label_to_q.to(device=shift_labels.device)[shift_labels]
+            loss += t.nn.MSELoss()(shift_preds, shift_true)
+        return loss
 
     def label_weighted_loss(self, outputs, labels, **kwargs):
         logits = outputs.get("logits")  # (batch, seq_len, vocab_size)
@@ -84,3 +97,10 @@ class Loss:
             log |= {"custom_loss": loss.item()}
             wandb.log(log)
         return loss
+
+
+if __name__ == "__main__":
+    from cotorra.trainer import Trainer
+
+    trainer = Trainer()
+    self = Loss(cfg=trainer.cfg, tkzr_cfg=trainer.tkzr_cfg)
