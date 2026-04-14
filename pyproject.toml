@@ -18,7 +18,7 @@
         "transformers>=5.3.0",
         "typer>=0.24.1",
         "wandb>=0.25.1",
-]
+    ]
     description = "configurable trainer for generative event models"
     keywords = [
         "model training",
@@ -30,7 +30,7 @@
     name = "cotorra"
     readme = { file = "README.md", content-type = "text/markdown" }
     requires-python = ">=3.12"
-    version = "26.0.0"
+    version = "26.2.0"
 
     [project.scripts]
         cotorra = "cotorra.cli:main"
@@ -59,12 +59,9 @@
         [tool.ruff.lint.isort]
             known-first-party = [ "cotorra" ]
 
-[tool.setuptools.packages.find]
-    where = [ "src" ]
-
 [build-system]
-    build-backend = "setuptools.build_meta"
-    requires      = [ "setuptools>=82.0", "wheel", "ninja" ]
+    build-backend = "uv_build"
+    requires      = [ "uv_build>=0.10.6,<1.0.0" ]
 
 [tool.uv]
     exclude-newer = "2026-04-04T00:00:00Z"

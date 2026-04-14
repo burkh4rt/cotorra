@@ -18,18 +18,37 @@ from cotorra.reporter import Logger
 class Extractor:
     """load a model and extract representations from it"""
 
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        main_cfg: pathlib.Path | str = None,
+        processed_data_home: pathlib.Path | str = None,
+        output_home: pathlib.Path | str = None,
+        **kwargs,
+    ):
         main_cfg = OmegaConf.load(
-            pathlib.Path("./config/main.yaml").expanduser().resolve()
+            pathlib.Path(main_cfg if main_cfg is not None else "./config/main.yaml")
+            .expanduser()
+            .resolve()
         )
-        mdl_cfg = OmegaConf.load(
-            pathlib.Path(main_cfg.model_config).expanduser().resolve()
-        )
-        self.cfg = OmegaConf.merge(main_cfg, mdl_cfg, kwargs)
+        self.cfg = OmegaConf.merge(main_cfg, kwargs)
         self.processed_data_home = (
-            pathlib.Path(self.cfg.processed_data_home).expanduser().resolve()
+            pathlib.Path(
+                processed_data_home
+                if processed_data_home is not None
+                else self.cfg.processed_data_home
+            )
+            .expanduser()
+            .resolve()
         )
-        self.output_dir = pathlib.Path(self.cfg.output_dir).expanduser().resolve()
+        self.output_home = (
+            pathlib.Path(
+                output_home
+                if output_home is not None
+                else self.cfg.get("output_home", self.cfg.get("output_dir"))
+            )
+            .expanduser()
+            .resolve()
+        )
         self.tkzr_cfg = OmegaConf.load(self.processed_data_home / "tokenizer.yaml")
         self.loader = Loader(self.cfg)
         self.logger = Logger()
@@ -41,7 +60,7 @@ class Extractor:
             else "cpu"
         )
         self.model = AutoModelForCausalLM.from_pretrained(
-            self.output_dir / f"mdl-{self.cfg.wandb.run_name}"
+            self.output_home / f"mdl-{self.cfg.wandb.run_name}"
         )
         self.model.to(self.device).eval()
         if not isinstance(self.model.config.pad_token_id, int):

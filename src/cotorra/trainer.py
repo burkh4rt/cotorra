@@ -27,18 +27,43 @@ class Trainer:
     data into the same file;
     we need to start by fishing out training and validation data"""
 
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        main_cfg: pathlib.Path | str = None,
+        mdl_cfg: pathlib.Path | str = None,
+        processed_data_home: pathlib.Path | str = None,
+        output_home: pathlib.Path | str = None,
+        **kwargs,
+    ):
         main_cfg = OmegaConf.load(
-            pathlib.Path("./config/main.yaml").expanduser().resolve()
+            pathlib.Path(main_cfg if main_cfg is not None else "./config/main.yaml")
+            .expanduser()
+            .resolve()
         )
         mdl_cfg = OmegaConf.load(
-            pathlib.Path(main_cfg.model_config).expanduser().resolve()
+            pathlib.Path(mdl_cfg if mdl_cfg is not None else main_cfg.model_config)
+            .expanduser()
+            .resolve()
         )
         self.cfg = OmegaConf.merge(main_cfg, mdl_cfg, OmegaConf.create(kwargs))
         self.processed_data_home = (
-            pathlib.Path(self.cfg.processed_data_home).expanduser().resolve()
+            pathlib.Path(
+                processed_data_home
+                if processed_data_home is not None
+                else self.cfg.processed_data_home
+            )
+            .expanduser()
+            .resolve()
         )
-        self.output_dir = pathlib.Path(self.cfg.output_dir).expanduser().resolve()
+        self.output_home = (
+            pathlib.Path(
+                output_home
+                if output_home is not None
+                else self.cfg.get("output_home", self.cfg.get("output_dir"))
+            )
+            .expanduser()
+            .resolve()
+        )
         self.tkzr_cfg = OmegaConf.load(self.processed_data_home / "tokenizer.yaml")
         self.loader = Loader(self.cfg)
         self.logger = Logger()
@@ -52,7 +77,7 @@ class Trainer:
             train_dataset=self.loader.get_train_data(),
             eval_dataset=self.loader.get_tuning_data(),
             args=TrainingArguments(
-                output_dir=str(self.output_dir), **self.cfg.training_args
+                output_dir=str(self.output_home), **self.cfg.training_args
             ),
             callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
         )
@@ -96,7 +121,7 @@ class Trainer:
     def train(self, verbose=False):
         self.trainer.train()
         self.trainer.model.save_pretrained(
-            self.output_dir / f"mdl-{self.cfg.wandb.run_name}"
+            self.output_home / f"mdl-{self.cfg.wandb.run_name}"
         )
 
         if verbose:

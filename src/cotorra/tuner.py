@@ -28,7 +28,7 @@ class Tuner(Trainer):
             setattr(self.trainer.args, n, v)
         self.trainer.train()
         self.trainer.model.save_pretrained(
-            self.output_dir / f"mdl-{self.cfg.wandb.run_name}"
+            self.output_home / f"mdl-{self.cfg.wandb.run_name}"
         )
 
         if verbose:

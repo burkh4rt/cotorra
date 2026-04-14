@@ -32,7 +32,7 @@ uv sync
 uv run cotorra --help
 ```
 
-## Context and usage
+## Context
 
 Suppose you have a dataset of tokenized timelines `tokens_times.parquet` as a
 parquet table with columns:
@@ -100,33 +100,24 @@ Given these things, we want to train a model to predict the next token in a
 subject's timeline given their complete history or context up to this point. This
 package is designed to do that in a configurable way.
 
-We provide a CLI with the following command:
-
-```sh
-# train a model using the provided configurations
-cotorra train [--output OUTPUT_DIR] [--verbose]
-
-# hyperparameter tuning
-cotorra tune [--output OUTPUT_DIR] [--verbose]
-```
-
 ## Configuration
 
 This library can be extensively customized for your use purposes through a yaml
-configuration, as opposed to having to having to write python.
+configuration, as opposed to having to having to write python. All configuration
+lives under `config/`. The entrypoint is `config/main.yaml`:
 
 #### Main configuration ([example](config/main.yaml))
 
 - **processed_data_home**: Path to processed data (tokenized timelines, splits,
   tokenizer config).
 - **model_config**: Path to the model configuration YAML (e.g.,
-  config/model/llama-32-lite.yaml).
+  config/model/llama-32-lite.yaml). [see below]
 - **max_seq_len**: Maximum sequence length for model input.
 - **n_epochs**: Number of epochs (handled in the dataloader, not the trainer).
 - **wandb**:
   - **project**: Weights & Biases project name for experiment tracking.
   - **run_name**: Name for the current run.
-- **output_dir**: Directory to save model outputs and checkpoints.
+- **output_home**: Directory to save model outputs and checkpoints.
 - **tokens_of_interest**: List of special tokens to upweight during training.
 - **toi_weight**: Weight multiplier for tokens of interest in the loss function.
 - **training_args**: Arguments passed to HuggingFace's
@@ -146,7 +137,7 @@ configuration, as opposed to having to having to write python.
   [`AutoConfig`](https://huggingface.co/docs/transformers/en/model_doc/auto)
   object
 
-### Customizing configuration and programmatic overrides
+## Usage
 
 To use a different dataset or schema, create new YAML files under
 `config/collation/` and `config/tokenization/` and update the paths in
@@ -161,6 +152,86 @@ from cotorra.trainer import Trainer
 trainer = Trainer(data_home="~/other/data", output_dir="~/other/output")
 trainer.train()
 ```
+
+### CLI
+
+We provide a CLI:
+
+```
+ Usage: cotorra [OPTIONS] COMMAND [ARGS]...
+
+ Configurable training for generative event models
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --install-completion          Install completion for the current shell.      │
+│ --show-completion             Show completion for the current shell, to copy │
+│                               it or customize the installation.              │
+│ --help                        Show this message and exit.                    │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ train    Train a model on tokenized data. For tokenization, consult the      │
+│          cocoa package.                                                      │
+│ tune     Run hyperparameter tuning while training a model.                   │
+│ extract  Extract representations from a trained model.                       │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
+with commands:
+
+- `cotorra train`
+
+  ```
+  Usage: cotorra train [OPTIONS]
+
+  Train a model on tokenized data. For tokenization, consult the cocoa package.
+
+  ╭─ Options ────────────────────────────────────────────────────────────────────╮
+  │ --main-config          -m      PATH  Main configuration file (overrides      │
+  │                                      default)                                │
+  │ --model-config                 PATH  Model configuration file                │
+  │ --processed-data-home  -p      TEXT  Processed data directory (overrides     │
+  │                                      config)                                 │
+  │ --output-home          -o      PATH  Output directory for trained models     │
+  │ --verbose              -v            Verbose logging for collate             │
+  │ --help                               Show this message and exit.             │
+  ╰──────────────────────────────────────────────────────────────────────────────╯
+  ```
+
+- `cotorra tune`
+
+  ```
+  Usage: cotorra tune [OPTIONS]
+
+  Run hyperparameter tuning while training a model.
+
+  ╭─ Options ────────────────────────────────────────────────────────────────────╮
+  │ --main-config          -m      PATH  Main configuration file (overrides      │
+  │                                      default)                                │
+  │ --model-config                 PATH  Model configuration file                │
+  │ --processed-data-home  -p      TEXT  Processed data directory (overrides     │
+  │                                      config)                                 │
+  │ --output-home          -o      PATH  Output directory for trained models     │
+  │ --verbose              -v            Verbose logging for collate             │
+  │ --help                               Show this message and exit.             │
+  ╰──────────────────────────────────────────────────────────────────────────────╯
+  ```
+
+- `cotorra extract`
+
+  ```
+  Usage: cotorra extract [OPTIONS]
+
+  Extract representations from a trained model.
+
+  ╭─ Options ────────────────────────────────────────────────────────────────────╮
+  │ --main-config          -m      PATH  Main configuration file (overrides      │
+  │                                      default)                                │
+  │ --processed-data-home  -p      TEXT  Processed data directory (overrides     │
+  │                                      config)                                 │
+  │ --output-home          -o      PATH  Output directory for trained models     │
+  │ --help                               Show this message and exit.             │
+  ╰──────────────────────────────────────────────────────────────────────────────╯
+  ```
 
 [^1]:
     L. Gersony, "The Quiet Victory of Chicago’s Monk Parakeets," _The Chicago

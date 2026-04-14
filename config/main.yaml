@@ -1,9 +1,7 @@
 %YAML 1.2
 ---
-processed_data_home: ../cocoa/processed
-# ~/cocoa/processed
-# /gpfs/data/bbj-lab/users/burkh4rt/cocoa/processed
-# /mnt/bbj-lab/users/burkh4rt/cocoa/processed
+processed_data_home: ../cocoa/processed # where processed data lives
+output_home: ./output # where you can find trained models
 
 model_config: ./config/model/llama-32.yaml
 max_seq_len: !!int &max_len 4096
@@ -12,7 +10,6 @@ n_epochs: !!int 2
 wandb:
   project: cotorra
   run_name: &run_name cotorra-t-rope
-output_dir: ./output
 
 custom_loss: !!bool true
 quantile_token_loss:
@@ -38,6 +35,7 @@ training_args:
   load_best_model_at_end: !!bool true
   greater_is_better: !!bool false
   eval_strategy: steps
+  prediction_loss_only: !!bool true # may improve training speed
   save_strategy: best
   ddp_find_unused_parameters: !!bool false
   neftune_noise_alpha: !!float 5.0
