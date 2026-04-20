@@ -121,7 +121,7 @@ class Trainer:
     def train(self, verbose=False):
         self.trainer.train()
         self.trainer.model.save_pretrained(
-            self.output_home / f"mdl-{self.cfg.wandb.run_name}"
+            self.output_home / f"mdl-{self.cfg.run_name}"
         )
 
         if verbose:

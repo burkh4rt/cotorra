@@ -43,7 +43,7 @@ def train(
         ),
     ] = None,
     output_home: Annotated[
-        Optional[pathlib.Path],
+        Optional[str],
         typer.Option("--output-home", "-o", help="Output directory for trained models"),
     ] = None,
     verbose: Annotated[
@@ -67,6 +67,8 @@ def train(
         trainer.train(verbose=verbose)
         t1 = time.perf_counter()
         print(f"\n[green]✓[/green] Training completed in {t1 - t0:.2f}s.")
+        out_path = trainer.output_home / f"mdl-{trainer.cfg.run_name}"
+        print(f"  Model: [cyan]{out_path}[/cyan]")
 
 
 @app.command()
@@ -90,7 +92,7 @@ def tune(
         ),
     ] = None,
     output_home: Annotated[
-        Optional[pathlib.Path],
+        Optional[str],
         typer.Option("--output-home", "-o", help="Output directory for trained models"),
     ] = None,
     verbose: Annotated[
@@ -114,6 +116,8 @@ def tune(
         tuner.train(verbose=verbose)
         t1 = time.perf_counter()
         print(f"\n[green]✓[/green] Tuning completed in {t1 - t0:.2f}s.")
+        out_path = tuner.output_home / f"mdl-{tuner.cfg.run_name}"
+        print(f"  Model: [cyan]{out_path}[/cyan]")
 
 
 @app.command()
@@ -133,7 +137,7 @@ def extract(
         ),
     ] = None,
     output_home: Annotated[
-        Optional[pathlib.Path],
+        Optional[str],
         typer.Option("--output-home", "-o", help="Output directory for trained models"),
     ] = None,
 ):
@@ -150,6 +154,9 @@ def extract(
         extractor.extract()
         t1 = time.perf_counter()
         print(f"\n[green]✓[/green] Extraction completed in {t1 - t0:.2f}s.")
+        for split in extractor.loader.splits:
+            output = extractor.processed_data_home / f"features-{split}.parquet"
+            print(f" Output: {output}")
 
 
 def main():
