@@ -159,6 +159,46 @@ def extract(
             print(f" Output: {output}")
 
 
+@app.command()
+def score(
+    main_config: Annotated[
+        Optional[pathlib.Path],
+        typer.Option(
+            "--main-config", "-m", help="Main configuration file (overrides default)"
+        ),
+    ] = None,
+    processed_data_home: Annotated[
+        Optional[str],
+        typer.Option(
+            "--processed-data-home",
+            "-p",
+            help="Processed data directory (overrides config)",
+        ),
+    ] = None,
+    output_home: Annotated[
+        Optional[str],
+        typer.Option("--output-home", "-o", help="Output directory for score files"),
+    ] = None,
+):
+    """
+    Generate SCORE/REACH metrics from a trained model and save them to parquet.
+    """
+    from cotorra.scorer import Scorer
+
+    with console.status("[bold green]Scoring held-out data..."):
+        t0 = time.perf_counter()
+        scorer = Scorer(
+            main_cfg=main_config,
+            processed_data_home=processed_data_home,
+            output_home=output_home,
+        )
+        scorer.save_all()
+        t1 = time.perf_counter()
+        print(f"\n[green]✓[/green] Scoring completed in {t1 - t0:.2f}s.")
+        out_path = scorer.output_home / f"scores-{scorer.cfg.wandb.run_name}.parquet"
+        print(f"  Scores: [cyan]{out_path}[/cyan]")
+
+
 def main():
     app()
 

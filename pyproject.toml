@@ -13,10 +13,10 @@
         "omegaconf",
         "optuna",
         "polars",
-        "quick-sco-re",
         "rich",
-        "sglang",
         "torch",
+        "torchaudio",
+        "torchvision",
         "transformers",
         "typer",
         "tqdm",
@@ -31,8 +31,9 @@
     license = "MIT"
     license-files = [ "LICEN[CS]E.*" ]
     name = "cotorra"
+    optional-dependencies = { generate = [ "quick-sco-re", "sglang" ] }
     readme = { file = "README.md", content-type = "text/markdown" }
-    requires-python = ">=3.12,<3.13"
+    requires-python = ">=3.11"
     version = "26.2.0"
 
     [project.scripts]
@@ -72,3 +73,14 @@
 
     [tool.uv.sources]
         quick-sco-re = { git = "https://github.com/lukesolo-ml/SCOPE_REACH_optimized_inference" }
+        torch = [
+            { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+        ]
+        torchvision = [
+            { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+        ]
+
+    [[tool.uv.index]]
+        explicit = true
+        name     = "pytorch-cu128"
+        url      = "https://download.pytorch.org/whl/cu128"

@@ -11,7 +11,6 @@ import pathlib
 
 import numpy as np
 import polars as pl
-import sglang as sgl
 import tqdm
 from omegaconf import OmegaConf
 from quick_sco_re import GenerationConfig, create_engine, generate_and_score
@@ -25,6 +24,7 @@ class Scorer:
         main_cfg: pathlib.Path | str = None,
         processed_data_home: pathlib.Path | str = None,
         output_home: pathlib.Path | str = None,
+        model_home: pathlib.Path | str = None,
         **kwargs,
     ):
         main_cfg = OmegaConf.load(
@@ -55,7 +55,9 @@ class Scorer:
         self.logger = Logger()
 
         self.engine = create_engine(
-            model_path=str(self.output_home / f"mdl-{self.cfg.run_name}"),
+            model_path=str(pathlib.Path(model_home).expanduser().resolve())
+            if model_home is not None
+            else str(self.output_home / f"mdl-{self.cfg.run_name}"),
             max_len=self.cfg.score.max_len,
             use_time_horizon="max_time" in self.cfg.score,  # use if max_time configured
         )

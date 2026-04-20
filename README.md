@@ -28,7 +28,7 @@ You can use [uv](https://docs.astral.sh/uv/pip/) to create an environment for
 running this code (with Python >= 3.12) as follows:
 
 ```sh
-uv sync
+uv sync # special installation required for some systems in order to run scoring
 uv run cotorra --help
 ```
 
@@ -162,18 +162,20 @@ We provide a CLI:
 
  Configurable training for generative event models
 
-╭─ Options ────────────────────────────────────────────────────────────────────╮
-│ --install-completion          Install completion for the current shell.      │
-│ --show-completion             Show completion for the current shell, to copy │
-│                               it or customize the installation.              │
-│ --help                        Show this message and exit.                    │
-╰──────────────────────────────────────────────────────────────────────────────╯
-╭─ Commands ───────────────────────────────────────────────────────────────────╮
-│ train    Train a model on tokenized data. For tokenization, consult the      │
-│          cocoa package.                                                      │
-│ tune     Run hyperparameter tuning while training a model.                   │
-│ extract  Extract representations from a trained model.                       │
-╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ───────────────────────────────────────────────────────────────────╮
+│ --install-completion          Install completion for the current shell.     │
+│ --show-completion             Show completion for the current shell, to     │
+│                               copy it or customize the installation.        │
+│ --help                        Show this message and exit.                   │
+╰─────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ──────────────────────────────────────────────────────────────────╮
+│ train    Train a model on tokenized data. For tokenization, consult the     │
+│          cocoa package.                                                     │
+│ tune     Run hyperparameter tuning while training a model.                  │
+│ extract  Extract representations from a trained model.                      │
+│ score    Generate SCORE/REACH metrics from a trained model and save them to │
+│          parquet.                                                           │
+╰─────────────────────────────────────────────────────────────────────────────╯
 ```
 
 with commands:
@@ -185,16 +187,16 @@ with commands:
 
   Train a model on tokenized data. For tokenization, consult the cocoa package.
 
-  ╭─ Options ────────────────────────────────────────────────────────────────────╮
-  │ --main-config          -m      PATH  Main configuration file (overrides      │
-  │                                      default)                                │
-  │ --model-config                 PATH  Model configuration file                │
-  │ --processed-data-home  -p      TEXT  Processed data directory (overrides     │
-  │                                      config)                                 │
-  │ --output-home          -o      PATH  Output directory for trained models     │
-  │ --verbose              -v            Verbose logging for collate             │
-  │ --help                               Show this message and exit.             │
-  ╰──────────────────────────────────────────────────────────────────────────────╯
+  ╭─ Options ───────────────────────────────────────────────────────────────────╮
+  │ --main-config          -m      PATH  Main configuration file (overrides     │
+  │                                      default)                               │
+  │ --model-config                 PATH  Model configuration file               │
+  │ --processed-data-home  -p      TEXT  Processed data directory (overrides    │
+  │                                      config)                                │
+  │ --output-home          -o      TEXT  Output directory for trained models    │
+  │ --verbose              -v            Verbose logging for collate            │
+  │ --help                               Show this message and exit.            │
+  ╰─────────────────────────────────────────────────────────────────────────────╯
   ```
 
 - `cotorra tune`
@@ -204,16 +206,16 @@ with commands:
 
   Run hyperparameter tuning while training a model.
 
-  ╭─ Options ────────────────────────────────────────────────────────────────────╮
-  │ --main-config          -m      PATH  Main configuration file (overrides      │
-  │                                      default)                                │
-  │ --model-config                 PATH  Model configuration file                │
-  │ --processed-data-home  -p      TEXT  Processed data directory (overrides     │
-  │                                      config)                                 │
-  │ --output-home          -o      PATH  Output directory for trained models     │
-  │ --verbose              -v            Verbose logging for collate             │
-  │ --help                               Show this message and exit.             │
-  ╰──────────────────────────────────────────────────────────────────────────────╯
+  ╭─ Options ───────────────────────────────────────────────────────────────────╮
+  │ --main-config          -m      PATH  Main configuration file (overrides     │
+  │                                      default)                               │
+  │ --model-config                 PATH  Model configuration file               │
+  │ --processed-data-home  -p      TEXT  Processed data directory (overrides    │
+  │                                      config)                                │
+  │ --output-home          -o      TEXT  Output directory for trained models    │
+  │ --verbose              -v            Verbose logging for collate            │
+  │ --help                               Show this message and exit.            │
+  ╰─────────────────────────────────────────────────────────────────────────────╯
   ```
 
 - `cotorra extract`
@@ -223,14 +225,31 @@ with commands:
 
   Extract representations from a trained model.
 
-  ╭─ Options ────────────────────────────────────────────────────────────────────╮
-  │ --main-config          -m      PATH  Main configuration file (overrides      │
-  │                                      default)                                │
-  │ --processed-data-home  -p      TEXT  Processed data directory (overrides     │
-  │                                      config)                                 │
-  │ --output-home          -o      PATH  Output directory for trained models     │
-  │ --help                               Show this message and exit.             │
-  ╰──────────────────────────────────────────────────────────────────────────────╯
+  ╭─ Options ───────────────────────────────────────────────────────────────────╮
+  │ --main-config          -m      PATH  Main configuration file (overrides     │
+  │                                      default)                               │
+  │ --processed-data-home  -p      TEXT  Processed data directory (overrides    │
+  │                                      config)                                │
+  │ --output-home          -o      TEXT  Output directory for trained models    │
+  │ --help                               Show this message and exit.            │
+  ╰─────────────────────────────────────────────────────────────────────────────╯
+  ```
+
+- `cotorra score`
+
+  ```
+  Usage: cotorra score [OPTIONS]
+
+  Generate SCORE/REACH metrics from a trained model and save them to parquet.
+
+  ╭─ Options ───────────────────────────────────────────────────────────────────╮
+  │ --main-config          -m      PATH  Main configuration file (overrides     │
+  │                                      default)                               │
+  │ --processed-data-home  -p      TEXT  Processed data directory (overrides    │
+  │                                      config)                                │
+  │ --output-home          -o      TEXT  Output directory for score files       │
+  │ --help                               Show this message and exit.            │
+  ╰─────────────────────────────────────────────────────────────────────────────╯
   ```
 
 [^1]:

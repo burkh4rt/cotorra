@@ -23,6 +23,7 @@ class Extractor:
         main_cfg: pathlib.Path | str = None,
         processed_data_home: pathlib.Path | str = None,
         output_home: pathlib.Path | str = None,
+        model_home: pathlib.Path | str = None,
         **kwargs,
     ):
         main_cfg = OmegaConf.load(
@@ -50,7 +51,7 @@ class Extractor:
             .resolve()
         )
         self.tkzr_cfg = OmegaConf.load(self.processed_data_home / "tokenizer.yaml")
-        self.loader = Loader(self.cfg)
+        self.loader = Loader(self.cfg, self.processed_data_home)
         self.logger = Logger()
         self.device = (
             "cuda"
@@ -60,7 +61,9 @@ class Extractor:
             else "cpu"
         )
         self.model = AutoModelForCausalLM.from_pretrained(
-            self.output_home / f"mdl-{self.cfg.wandb.run_name}"
+            pathlib.Path(model_home).expanduser().resolve()
+            if model_home is not None
+            else self.output_home / f"mdl-{self.cfg.run_name}"
         )
         self.model.to(self.device).eval()
         if not isinstance(self.model.config.pad_token_id, int):

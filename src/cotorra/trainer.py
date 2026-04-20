@@ -65,7 +65,7 @@ class Trainer:
             .resolve()
         )
         self.tkzr_cfg = OmegaConf.load(self.processed_data_home / "tokenizer.yaml")
-        self.loader = Loader(self.cfg)
+        self.loader = Loader(self.cfg, self.processed_data_home)
         self.logger = Logger()
 
         self.trainer = t_Trainer(
