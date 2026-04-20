@@ -1,18 +1,16 @@
 %YAML 1.2
 ---
-processed_data_home: ../cocoa/processed
-# ~/cocoa/processed
-# /gpfs/data/bbj-lab/users/burkh4rt/cocoa/processed
-# /mnt/bbj-lab/users/burkh4rt/cocoa/processed
+processed_data_home: ../cocoa/processed # where processed data lives
+output_home: ./output/fused # where you can find trained models
 
-model_config: ./config/model/llama-32.yaml
+model_config: ./config/model/llama-32-lite.yaml
 max_seq_len: !!int &max_len 4096
 n_epochs: !!int 2
+run_name: &run_name cotorra-t-rope
 
 wandb:
   project: cotorra
-  run_name: &run_name cotorra-t-rope
-output_dir: ./output
+  run_name: *run_name
 
 custom_loss: !!bool true
 quantile_token_loss:
@@ -23,7 +21,7 @@ label_weighted_loss:
     - RESP//imv
     - DSCG//expired
     - DSCG//hospice
-  toi_weight: !!float 10
+  toi_weight: !!float 20.0
 
 time_based_rope:
   sec_per_pos_id: !!int 300
@@ -38,10 +36,11 @@ training_args:
   load_best_model_at_end: !!bool true
   greater_is_better: !!bool false
   eval_strategy: steps
+  prediction_loss_only: !!bool true # may improve training speed
   save_strategy: best
   ddp_find_unused_parameters: !!bool false
   neftune_noise_alpha: !!float 5.0
-  # auto_find_batch_size: !!bool true
+  auto_find_batch_size: !!bool false # turning this on may cause issues with hyperparameter tuning
   learning_rate: !!float 2e-4
   gradient_accumulation_steps: !!int 1
   remove_unused_columns: !!bool false # otherwise `s_elapsed` is automatically dropped
@@ -51,9 +50,23 @@ training_args:
 tuning_args:
   direction: minimize
   backend: optuna
-  n_trials: !!int 10
+  n_trials: !!int 3
 
 extract:
   max_len: *max_len
   batch_size: !!int 64
   time_limit_s: !!int 86400 # 24 hours
+
+score:
+  max_len: *max_len
+  n_samp: !!int 5 # MC samples per input per trajectory type
+  target_tokens: # token-based outcomes of interest
+    - XFR-IN//icu
+    - DSCG//expired
+    - RESP//imv
+  end_tokens: # tokens that naturally terminate a sequence
+    - EOS
+  suppressed_tokens: [] # tokens to suppress (e.g. PAD) via logit bias
+  trunc_id: !!int 0 # token id to force after time horizon exceeded
+  max_time: !!int 1440 # 1day, max time horizon in minutes
+  batch_size: !!int 3

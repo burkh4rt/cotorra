@@ -6,19 +6,20 @@
         "Programming Language :: Python :: 3",
     ]
     dependencies = [
-        "accelerate>=1.13.0",
-        "datasets>=4.8.4",
-        "huggingface-hub>=1.7.2",
-        "numpy>=2.4.2",
-        "omegaconf>=2.3.0",
-        "optuna>=4.8.0",
-        "polars>=1.39.0",
-        "rich>=14.3.3",
-        "torch>=2.11.0",
-        "transformers>=5.3.0",
-        "typer>=0.24.1",
-        "wandb>=0.25.1",
-]
+        "accelerate",
+        "datasets",
+        "huggingface-hub",
+        "numpy",
+        "omegaconf",
+        "optuna",
+        "polars",
+        "rich",
+        "torch",
+        "transformers",
+        "typer",
+        "tqdm",
+        "wandb",
+    ]
     description = "configurable trainer for generative event models"
     keywords = [
         "model training",
@@ -28,9 +29,10 @@
     license = "MIT"
     license-files = [ "LICEN[CS]E.*" ]
     name = "cotorra"
+    optional-dependencies = { generate = [ "quick-sco-re", "sglang" ] }
     readme = { file = "README.md", content-type = "text/markdown" }
-    requires-python = ">=3.12"
-    version = "26.0.0"
+    requires-python = ">=3.11"
+    version = "26.2.0"
 
     [project.scripts]
         cotorra = "cotorra.cli:main"
@@ -59,16 +61,21 @@
         [tool.ruff.lint.isort]
             known-first-party = [ "cotorra" ]
 
-[tool.setuptools.packages.find]
-    where = [ "src" ]
-
 [build-system]
-    build-backend = "setuptools.build_meta"
-    requires      = [ "setuptools>=82.0", "wheel", "ninja" ]
+    build-backend = "uv_build"
+    requires      = [ "uv_build>=0.10.6,<1.0.0" ]
 
 [tool.uv]
-    exclude-newer = "2026-04-04T00:00:00Z"
-    no-cache      = true
+    index-strategy = "unsafe-best-match"
+    no-cache       = true
 
-    [tool.uv.pip]
-        index-strategy = "unsafe-best-match"
+    [tool.uv.sources]
+        quick-sco-re = { git = "https://github.com/lukesolo-ml/SCOPE_REACH_optimized_inference" }
+        torch = [
+            { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+        ]
+
+    [[tool.uv.index]]
+        explicit = true
+        name     = "pytorch-cu128"
+        url      = "https://download.pytorch.org/whl/cu128"

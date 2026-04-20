@@ -27,12 +27,10 @@ class Loader:
     data into the same file;
     we need to start by fishing out training and validation data"""
 
-    def __init__(self, cfg=None):
+    def __init__(self, cfg, processed_data_home: pathlib.Path | str = None):
         self.cfg = cfg
         self.rng = np.random.default_rng(42)
-        self.processed_data_home = (
-            pathlib.Path(self.cfg.processed_data_home).expanduser().resolve()
-        )
+        self.processed_data_home = processed_data_home
         self.tokenizer_info = OmegaConf.load(
             self.processed_data_home / "tokenizer.yaml"
         )
@@ -99,6 +97,5 @@ class Loader:
 
 
 if __name__ == "__main__":
-    self = Loader()
-    self.get_train_data()
     # breakpoint()
+    pass

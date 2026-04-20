@@ -24,9 +24,27 @@ console = Console()
 
 @app.command()
 def train(
-    output: Annotated[
+    main_config: Annotated[
         Optional[pathlib.Path],
-        typer.Option("--output", "-o", help="Output directory for collated data"),
+        typer.Option(
+            "--main-config", "-m", help="Main configuration file (overrides default)"
+        ),
+    ] = None,
+    model_config: Annotated[
+        Optional[pathlib.Path],
+        typer.Option("--model-config", help="Model configuration file"),
+    ] = None,
+    processed_data_home: Annotated[
+        Optional[str],
+        typer.Option(
+            "--processed-data-home",
+            "-p",
+            help="Processed data directory (overrides config)",
+        ),
+    ] = None,
+    output_home: Annotated[
+        Optional[str],
+        typer.Option("--output-home", "-o", help="Output directory for trained models"),
     ] = None,
     verbose: Annotated[
         bool,
@@ -40,17 +58,42 @@ def train(
     """
     with console.status("[bold green]Training model..."):
         t0 = time.perf_counter()
-        trainer = Trainer() if output is None else Trainer(output_dir=output)
+        trainer = Trainer(
+            main_cfg=main_config,
+            mdl_cfg=model_config,
+            processed_data_home=processed_data_home,
+            output_home=output_home,
+        )
         trainer.train(verbose=verbose)
         t1 = time.perf_counter()
         print(f"\n[green]✓[/green] Training completed in {t1 - t0:.2f}s.")
+        out_path = trainer.output_home / f"mdl-{trainer.cfg.run_name}"
+        print(f"  Model: [cyan]{out_path}[/cyan]")
 
 
 @app.command()
 def tune(
-    output: Annotated[
+    main_config: Annotated[
         Optional[pathlib.Path],
-        typer.Option("--output", "-o", help="Output directory for collated data"),
+        typer.Option(
+            "--main-config", "-m", help="Main configuration file (overrides default)"
+        ),
+    ] = None,
+    model_config: Annotated[
+        Optional[pathlib.Path],
+        typer.Option("--model-config", help="Model configuration file"),
+    ] = None,
+    processed_data_home: Annotated[
+        Optional[str],
+        typer.Option(
+            "--processed-data-home",
+            "-p",
+            help="Processed data directory (overrides config)",
+        ),
+    ] = None,
+    output_home: Annotated[
+        Optional[str],
+        typer.Option("--output-home", "-o", help="Output directory for trained models"),
     ] = None,
     verbose: Annotated[
         bool,
@@ -64,19 +107,38 @@ def tune(
     """
     with console.status("[bold green]Tuning model..."):
         t0 = time.perf_counter()
-        tuner = Tuner() if output is None else Tuner(output_dir=output)
+        tuner = Tuner(
+            main_cfg=main_config,
+            mdl_cfg=model_config,
+            processed_data_home=processed_data_home,
+            output_home=output_home,
+        )
         tuner.train(verbose=verbose)
         t1 = time.perf_counter()
         print(f"\n[green]✓[/green] Tuning completed in {t1 - t0:.2f}s.")
+        out_path = tuner.output_home / f"mdl-{tuner.cfg.run_name}"
+        print(f"  Model: [cyan]{out_path}[/cyan]")
 
 
 @app.command()
 def extract(
-    output: Annotated[
+    main_config: Annotated[
         Optional[pathlib.Path],
         typer.Option(
-            "--output", "-o", help="Output directory for extracted representations."
+            "--main-config", "-m", help="Main configuration file (overrides default)"
         ),
+    ] = None,
+    processed_data_home: Annotated[
+        Optional[str],
+        typer.Option(
+            "--processed-data-home",
+            "-p",
+            help="Processed data directory (overrides config)",
+        ),
+    ] = None,
+    output_home: Annotated[
+        Optional[str],
+        typer.Option("--output-home", "-o", help="Output directory for trained models"),
     ] = None,
 ):
     """
@@ -84,10 +146,57 @@ def extract(
     """
     with console.status("[bold green]Extracting representations..."):
         t0 = time.perf_counter()
-        extractor = Extractor() if output is None else Extractor(output_dir=output)
+        extractor = Extractor(
+            main_cfg=main_config,
+            processed_data_home=processed_data_home,
+            output_home=output_home,
+        )
         extractor.extract()
         t1 = time.perf_counter()
         print(f"\n[green]✓[/green] Extraction completed in {t1 - t0:.2f}s.")
+        for split in extractor.loader.splits:
+            output = extractor.processed_data_home / f"features-{split}.parquet"
+            print(f" Output: {output}")
+
+
+@app.command()
+def score(
+    main_config: Annotated[
+        Optional[pathlib.Path],
+        typer.Option(
+            "--main-config", "-m", help="Main configuration file (overrides default)"
+        ),
+    ] = None,
+    processed_data_home: Annotated[
+        Optional[str],
+        typer.Option(
+            "--processed-data-home",
+            "-p",
+            help="Processed data directory (overrides config)",
+        ),
+    ] = None,
+    output_home: Annotated[
+        Optional[str],
+        typer.Option("--output-home", "-o", help="Output directory for score files"),
+    ] = None,
+):
+    """
+    Generate SCORE/REACH metrics from a trained model and save them to parquet.
+    """
+    from cotorra.scorer import Scorer
+
+    with console.status("[bold green]Scoring held-out data..."):
+        t0 = time.perf_counter()
+        scorer = Scorer(
+            main_cfg=main_config,
+            processed_data_home=processed_data_home,
+            output_home=output_home,
+        )
+        scorer.save_all()
+        t1 = time.perf_counter()
+        print(f"\n[green]✓[/green] Scoring completed in {t1 - t0:.2f}s.")
+        out_path = scorer.output_home / f"scores-{scorer.cfg.wandb.run_name}.parquet"
+        print(f"  Scores: [cyan]{out_path}[/cyan]")
 
 
 def main():
