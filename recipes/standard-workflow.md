@@ -58,5 +58,11 @@ cotorra score \
     --output-home ./output/dev/
 ```
 
-_However, [sglang](https://docs.sglang.io) needs to be setup in order for this
-last step to run._
+<!-- prettier-ignore-start -->
+> [!TIP]
+> For this example, we used a small fraction of the whole dataset, allowing commands to
+> complete in a timely manner. For serious use cases, consider using a terminal
+> multiplexer like [tmux](https://github.com/tmux/tmux/wiki) or
+> [screen](https://www.gnu.org/software/screen/) so that commands  will continue to
+> run if your connection is interrupted.
+<!-- prettier-ignore-end -->

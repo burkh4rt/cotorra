@@ -18,6 +18,15 @@ from quick_sco_re import GenerationConfig, create_engine, generate_and_score
 from cotorra.logger import Logger
 
 
+def batched(iterable, n):
+    # `itertools.batched` introduced in Python 3.12
+    # cf. https://docs.python.org/3/library/itertools.html#itertools.batched
+    # batched('ABCDEFG', 3) → ABC DEF G
+    iterator = iter(iterable)
+    while batch := tuple(itertools.islice(iterator, n)):
+        yield batch
+
+
 class Scorer:
     def __init__(
         self,
@@ -96,9 +105,7 @@ class Scorer:
             )
             to_score_tokens = [x for x, flag in zip(self.tokens_past, to_score) if flag]
             for idx_tks in tqdm.tqdm(
-                itertools.batched(
-                    enumerate(to_score_tokens), self.cfg.score.batch_size
-                ),
+                batched(enumerate(to_score_tokens), self.cfg.score.batch_size),
                 position=1,
                 leave=False,
                 total=np.ceil(len(to_score_tokens) / self.cfg.score.batch_size),

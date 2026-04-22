@@ -289,7 +289,7 @@ rsync -avht \
  --exclude ".venv/" \
  --exclude ".idea/" \
  ~/Documents/chicago/cotorra \
- bbj-lab1:~/test
+ bbj-lab1:~
 ```
 
 -->
