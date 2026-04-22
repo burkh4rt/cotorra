@@ -18,8 +18,8 @@ from transformers import (
 from transformers import Trainer as t_Trainer
 
 from cotorra.loader import Loader
+from cotorra.logger import Logger
 from cotorra.loss import Loss
-from cotorra.reporter import Logger
 
 
 class Trainer:

@@ -15,7 +15,7 @@ import tqdm
 from omegaconf import OmegaConf
 from quick_sco_re import GenerationConfig, create_engine, generate_and_score
 
-from cotorra.reporter import Logger
+from cotorra.logger import Logger
 
 
 class Scorer:

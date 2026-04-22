@@ -24,12 +24,17 @@ south side of Chicago, where they have flourished. [^1]
 
 ## Installation
 
-You can use [uv](https://docs.astral.sh/uv/pip/) to create an environment for
-running this code (with Python >= 3.12) as follows:
+You can download and install this package as follows:
 
 ```sh
-uv sync # special installation required for some systems in order to run scoring
-uv run cotorra --help
+git clone git@github.com:bbj-lab/cotorra.git
+cd cotorra
+python -m venv .venv
+. .venv/bin/activate
+pip install "quick-sco-re @ git+https://github.com/lukesolo-ml/SCOPE_REACH_optimized_inference.git"
+pip install -e . \
+  --index-url https://download.pytorch.org/whl/cu128 \
+  --extra-index-url https://pypi.org/simple
 ```
 
 ## Context
@@ -284,18 +289,7 @@ rsync -avht \
  --exclude ".venv/" \
  --exclude ".idea/" \
  ~/Documents/chicago/cotorra \
- bbj-lab1:~
-```
-
-```
-sbatch \
-  --job-name=🦜-train \
-  --output=./logs/%j-%x.stdout \
-  --partition=gpudev \
-  --gres=gpu:1 \
-  --time=24:00:00 \
-  --chdir=/gpfs/data/bbj-lab/users/burkh4rt/cotorra \
-  --wrap="~/micromamba/bin/uv run cotorra train"
+ bbj-lab1:~/test
 ```
 
 -->

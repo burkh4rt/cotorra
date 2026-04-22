@@ -9,7 +9,7 @@ import numpy as np
 import torch as t
 
 import wandb
-from cotorra.reporter import Logger
+from cotorra.logger import Logger
 
 
 class Loss:

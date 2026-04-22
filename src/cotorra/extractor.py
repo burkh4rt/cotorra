@@ -12,7 +12,7 @@ from torch.nn.utils.rnn import pad_sequence
 from transformers import AutoModelForCausalLM
 
 from cotorra.loader import Loader
-from cotorra.reporter import Logger
+from cotorra.logger import Logger
 
 
 class Extractor:

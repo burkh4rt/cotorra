@@ -19,6 +19,10 @@
         "typer",
         "tqdm",
         "wandb",
+        "torchvision",
+        "torchaudio",
+        "quick-sco-re @ git+https://github.com/lukesolo-ml/SCOPE_REACH_optimized_inference.git",
+        "sglang",
     ]
     description = "configurable trainer for generative event models"
     keywords = [
@@ -29,7 +33,6 @@
     license = "MIT"
     license-files = [ "LICEN[CS]E.*" ]
     name = "cotorra"
-    optional-dependencies = { generate = [ "quick-sco-re", "sglang" ] }
     readme = { file = "README.md", content-type = "text/markdown" }
     requires-python = ">=3.11"
     version = "26.2.0"
@@ -40,8 +43,8 @@
     [project.urls]
         Repository = "https://github.com/bbj-lab/cotorra"
 
-[dependency-groups]
-    dev = [ "pip>=26.0.1", "ruff>=0.15.4" ]
+    [project.optional-dependencies]
+        dev = [ "ruff>=0.15.4" ]
 
 [tool.ruff]
     extend-exclude = [ "*.md" ]
@@ -62,20 +65,5 @@
             known-first-party = [ "cotorra" ]
 
 [build-system]
-    build-backend = "uv_build"
-    requires      = [ "uv_build>=0.10.6,<1.0.0" ]
-
-[tool.uv]
-    index-strategy = "unsafe-best-match"
-    no-cache       = true
-
-    [tool.uv.sources]
-        quick-sco-re = { git = "https://github.com/lukesolo-ml/SCOPE_REACH_optimized_inference" }
-        torch = [
-            { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
-        ]
-
-    [[tool.uv.index]]
-        explicit = true
-        name     = "pytorch-cu128"
-        url      = "https://download.pytorch.org/whl/cu128"
+    build-backend = "setuptools.build_meta"
+    requires      = [ "setuptools>=69", "wheel" ]

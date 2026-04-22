@@ -26,7 +26,7 @@ esac
 </details>
 
 ```sh
-uv run cocoa pipeline \
+cocoa pipeline \
     --raw-data-home "${hm}/development-sample-21/raw-mimic/dev" \
     --processed-data-home ./processed/dev \
     --verbose
@@ -35,7 +35,7 @@ uv run cocoa pipeline \
 2. Next we train a model on this data (with hyperparameter tuning):
 
 ```sh
-uv run cotorra tune \
+cotorra tune \
     --processed-data-home ../cocoa/processed/dev \
     --output-home ./output/dev/ \
     --model-config ./config/model/llama-32-lite.yaml \
@@ -45,7 +45,7 @@ uv run cotorra tune \
 3. You can then extract reps with:
 
 ```sh
-uv run cotorra extract \
+cotorra extract \
     --processed-data-home ../cocoa/processed/dev \
     --output-home ./output/dev/
 ```
@@ -53,7 +53,7 @@ uv run cotorra extract \
 4. You can get generative predictions with:
 
 ```sh
-uv run cotorra score \
+cotorra score \
     --processed-data-home ../cocoa/processed/dev \
     --output-home ./output/dev/
 ```
