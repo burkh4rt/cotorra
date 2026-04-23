@@ -27,7 +27,7 @@ class Loader:
     data into the same file;
     we need to start by fishing out training and validation data"""
 
-    def __init__(self, cfg, processed_data_home: pathlib.Path | str = None):
+    def __init__(self, cfg, processed_data_home: pathlib.Path):
         self.cfg = cfg
         self.rng = np.random.default_rng(42)
         self.processed_data_home = processed_data_home
@@ -68,10 +68,26 @@ class Loader:
                 "parquet", data_files={s: str(tt_split[s]) for s in self.splits}
             )
             .rename_column("tokens", "input_ids")
-            .remove_columns(
-                ["subject_id", "times", "s_elapsed"]
+            .select_columns(
+                ["input_ids"]
                 if "time_based_rope" not in self.cfg
-                else ["subject_id", "times"]
+                else ["input_ids", "s_elapsed"]
+            )
+        )
+
+        self.for_inference = (
+            ds.load_dataset(
+                "parquet",
+                data_files={
+                    s: str(self.processed_data_home / f"{s}_for_inference.parquet")
+                    for s in self.splits
+                },
+            )
+            .rename_column("tokens_past", "input_ids")
+            .select_columns(
+                ["input_ids"]
+                if "time_based_rope" not in self.cfg
+                else ["input_ids", "s_elapsed_past"]
             )
         )
 
@@ -97,5 +113,8 @@ class Loader:
 
 
 if __name__ == "__main__":
+    from cotorra.trainer import Trainer
+
+    trainer = Trainer()
+    self = Loader(cfg=trainer.cfg, processed_data_home=trainer.processed_data_home)
     # breakpoint()
-    pass

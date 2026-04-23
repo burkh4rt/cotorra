@@ -1,7 +1,7 @@
 %YAML 1.2
 ---
 processed_data_home: ../cocoa/processed # where processed data lives
-output_home: ./output/fused # where you can find trained models
+output_home: ./output # where you can find trained models
 
 model_config: ./config/model/llama-32-lite.yaml
 max_seq_len: !!int &max_len 4096
@@ -68,5 +68,5 @@ score:
     - EOS
   suppressed_tokens: [] # tokens to suppress (e.g. PAD) via logit bias
   trunc_id: !!int 0 # token id to force after time horizon exceeded
-  max_time: !!int 1440 # 1day, max time horizon in minutes
-  batch_size: !!int 3
+  max_time: !!int 1440 # 1 day, max time horizon in minutes
+  batch_size: !!int 16

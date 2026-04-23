@@ -13,6 +13,8 @@ from rich import print
 from rich.console import Console
 
 from cotorra.extractor import Extractor
+from cotorra.scorer_generative import GenerativeScorer
+from cotorra.scorer_rep_based import RepBasedScorer
 from cotorra.trainer import Trainer
 from cotorra.tuner import Tuner
 
@@ -160,7 +162,7 @@ def extract(
 
 
 @app.command()
-def score(
+def generative_score(
     main_config: Annotated[
         Optional[pathlib.Path],
         typer.Option(
@@ -183,19 +185,57 @@ def score(
     """
     Generate SCORE/REACH metrics from a trained model and save them to parquet.
     """
-    from cotorra.scorer import Scorer
 
-    with console.status("[bold green]Scoring held-out data..."):
+    with console.status("[bold green]Generative scoring on held-out data..."):
         t0 = time.perf_counter()
-        scorer = Scorer(
+        scorer = GenerativeScorer(
             main_cfg=main_config,
             processed_data_home=processed_data_home,
             output_home=output_home,
         )
         scorer.save_all()
         t1 = time.perf_counter()
-        print(f"\n[green]✓[/green] Scoring completed in {t1 - t0:.2f}s.")
-        out_path = scorer.output_home / f"scores-{scorer.cfg.wandb.run_name}.parquet"
+        print(f"\n[green]✓[/green] Generative scoring completed in {t1 - t0:.2f}s.")
+        out_path = (
+            scorer.output_home
+            / f"scores-generative-{scorer.cfg.wandb.run_name}.parquet"
+        )
+        print(f"  Scores: [cyan]{out_path}[/cyan]")
+
+
+@app.command()
+def rep_based_score(
+    main_config: Annotated[
+        Optional[pathlib.Path],
+        typer.Option(
+            "--main-config", "-m", help="Main configuration file (overrides default)"
+        ),
+    ] = None,
+    processed_data_home: Annotated[
+        Optional[str],
+        typer.Option(
+            "--processed-data-home",
+            "-p",
+            help="Processed data directory (overrides config)",
+        ),
+    ] = None,
+):
+    """
+    Generate rep-based scores for the token-based outcomes of interest.
+    """
+
+    with console.status("[bold green]Rep-based scoring on held-out data..."):
+        t0 = time.perf_counter()
+        scorer = RepBasedScorer(
+            main_cfg=main_config, processed_data_home=processed_data_home
+        )
+        scorer.save_all()
+        t1 = time.perf_counter()
+        print(f"\n[green]✓[/green] Rep-based scoring completed in {t1 - t0:.2f}s.")
+        out_path = (
+            scorer.processed_data_home
+            / f"scores-rep-based-{scorer.cfg.run_name}.parquet"
+        )
         print(f"  Scores: [cyan]{out_path}[/cyan]")
 
 

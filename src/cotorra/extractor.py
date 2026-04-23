@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-extract representations
+extract representations up to the thresholds created by the cocoa winnower
 """
 
 import pathlib
@@ -21,32 +21,22 @@ class Extractor:
     def __init__(
         self,
         main_cfg: pathlib.Path | str = None,
-        processed_data_home: pathlib.Path | str = None,
-        output_home: pathlib.Path | str = None,
         model_home: pathlib.Path | str = None,
         **kwargs,
     ):
-        main_cfg = OmegaConf.load(
+        parsed = OmegaConf.load(
             pathlib.Path(main_cfg if main_cfg is not None else "./config/main.yaml")
             .expanduser()
             .resolve()
         )
-        self.cfg = OmegaConf.merge(main_cfg, kwargs)
+        self.cfg = OmegaConf.merge(
+            parsed, OmegaConf.create({k: v for k, v in kwargs.items() if v is not None})
+        )
         self.processed_data_home = (
-            pathlib.Path(
-                processed_data_home
-                if processed_data_home is not None
-                else self.cfg.processed_data_home
-            )
-            .expanduser()
-            .resolve()
+            pathlib.Path(self.cfg.processed_data_home).expanduser().resolve()
         )
         self.output_home = (
-            pathlib.Path(
-                output_home
-                if output_home is not None
-                else self.cfg.get("output_home", self.cfg.get("output_dir"))
-            )
+            pathlib.Path(self.cfg.get("output_home", self.cfg.get("output_dir")))
             .expanduser()
             .resolve()
         )
@@ -70,22 +60,17 @@ class Extractor:
             self.model.config.pad_token_id = self.model.config.eos_token_id
         self.ds = None
 
-    def collate_fn(self, batch, time_limit_s: int = None):
+    def collate_fn(self, batch):
         ml = t.tensor(self.cfg.get("extract", {}).get("max_len", 4096))
-        break_pt = (
-            [t.minimum(t.searchsorted(x, time_limit_s), ml) for x in batch["s_elapsed"]]
-            if time_limit_s is not None
-            else [ml] * len(batch["input_ids"])
-        )
         input_ids = pad_sequence(
-            [x[:bk] for bk, x in zip(break_pt, batch["input_ids"])],
+            [x[:ml] for x in batch["input_ids"]],
             batch_first=True,
             padding_value=self.model.config.pad_token_id,
         ).to(self.model.device)
         if "time_based_rope" in self.cfg:
             p_ids = (
                 pad_sequence(
-                    [x[:bk] for bk, x in zip(break_pt, batch["s_elapsed"])],
+                    [x[:ml] for x in batch["s_elapsed_past"]],
                     batch_first=True,
                     padding_value=self.model.config.pad_token_id,
                 ).to(self.model.device)
@@ -97,9 +82,7 @@ class Extractor:
         return {"input_ids": input_ids, "position_ids": p_ids}
 
     def extract_final(self, batch):
-        collated = self.collate_fn(
-            batch, time_limit_s=self.cfg.get("extract", {}).get("time_limit_s", None)
-        )
+        collated = self.collate_fn(batch)
         first_eos = t.where(
             (hits := (collated["input_ids"] == self.model.config.eos_token_id)).any(
                 dim=-1
@@ -118,7 +101,7 @@ class Extractor:
         return batch
 
     def extract(self):
-        self.ds = self.loader.dataset.with_format("torch").map(
+        self.ds = self.loader.for_inference.with_format("torch").map(
             self.extract_final,
             batched=True,
             batch_size=self.cfg.get("extract", {}).get("batch_size", 8),

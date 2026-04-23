@@ -154,7 +154,7 @@ OmegaConf, so any config value can be overridden programmatically:
 from cotorra.trainer import Trainer
 
 # Override config values at instantiation
-trainer = Trainer(data_home="~/other/data", output_dir="~/other/output")
+trainer = Trainer(processed_data_home="~/other/data", output_home="~/other/output")
 trainer.train()
 ```
 
@@ -174,12 +174,14 @@ We provide a CLI:
 │ --help                        Show this message and exit.                   │
 ╰─────────────────────────────────────────────────────────────────────────────╯
 ╭─ Commands ──────────────────────────────────────────────────────────────────╮
-│ train    Train a model on tokenized data. For tokenization, consult the     │
-│          cocoa package.                                                     │
-│ tune     Run hyperparameter tuning while training a model.                  │
-│ extract  Extract representations from a trained model.                      │
-│ score    Generate SCORE/REACH metrics from a trained model and save them to │
-│          parquet.                                                           │
+│ train             Train a model on tokenized data. For tokenization,        │
+│                   consult the cocoa package.                                │
+│ tune              Run hyperparameter tuning while training a model.         │
+│ extract           Extract representations from a trained model.             │
+│ generative-score  Generate SCORE/REACH metrics from a trained model and     │
+│                   save them to parquet.                                     │
+│ rep-based-score   Generate rep-based scores for the token-based outcomes of │
+│                   interest.                                                 │
 ╰─────────────────────────────────────────────────────────────────────────────╯
 ```
 
@@ -223,6 +225,23 @@ with commands:
   ╰─────────────────────────────────────────────────────────────────────────────╯
   ```
 
+- `cotorra generative-score`
+
+  ```
+  Usage: cotorra generative-score [OPTIONS]
+
+  Generate SCORE/REACH metrics from a trained model and save them to parquet.
+
+  ╭─ Options ───────────────────────────────────────────────────────────────────╮
+  │ --main-config          -m      PATH  Main configuration file (overrides     │
+  │                                      default)                               │
+  │ --processed-data-home  -p      TEXT  Processed data directory (overrides    │
+  │                                      config)                                │
+  │ --output-home          -o      TEXT  Output directory for score files       │
+  │ --help                               Show this message and exit.            │
+  ╰─────────────────────────────────────────────────────────────────────────────╯
+  ```
+
 - `cotorra extract`
 
   ```
@@ -240,19 +259,18 @@ with commands:
   ╰─────────────────────────────────────────────────────────────────────────────╯
   ```
 
-- `cotorra score`
+- `cotorra rep-based-score`
 
   ```
-  Usage: cotorra score [OPTIONS]
+  Usage: cotorra rep-based-score [OPTIONS]
 
-  Generate SCORE/REACH metrics from a trained model and save them to parquet.
+  Generate rep-based scores for the token-based outcomes of interest.
 
   ╭─ Options ───────────────────────────────────────────────────────────────────╮
   │ --main-config          -m      PATH  Main configuration file (overrides     │
   │                                      default)                               │
   │ --processed-data-home  -p      TEXT  Processed data directory (overrides    │
   │                                      config)                                │
-  │ --output-home          -o      TEXT  Output directory for score files       │
   │ --help                               Show this message and exit.            │
   ╰─────────────────────────────────────────────────────────────────────────────╯
   ```

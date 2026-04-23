@@ -31,8 +31,6 @@ class Trainer:
         self,
         main_cfg: pathlib.Path | str = None,
         mdl_cfg: pathlib.Path | str = None,
-        processed_data_home: pathlib.Path | str = None,
-        output_home: pathlib.Path | str = None,
         **kwargs,
     ):
         main_cfg = OmegaConf.load(
@@ -45,22 +43,16 @@ class Trainer:
             .expanduser()
             .resolve()
         )
-        self.cfg = OmegaConf.merge(main_cfg, mdl_cfg, OmegaConf.create(kwargs))
+        self.cfg = OmegaConf.merge(
+            main_cfg,
+            mdl_cfg,
+            OmegaConf.create({k: v for k, v in kwargs.items() if v is not None}),
+        )  # passed cli options override config file here
         self.processed_data_home = (
-            pathlib.Path(
-                processed_data_home
-                if processed_data_home is not None
-                else self.cfg.processed_data_home
-            )
-            .expanduser()
-            .resolve()
+            pathlib.Path(self.cfg.processed_data_home).expanduser().resolve()
         )
         self.output_home = (
-            pathlib.Path(
-                output_home
-                if output_home is not None
-                else self.cfg.get("output_home", self.cfg.get("output_dir"))
-            )
+            pathlib.Path(self.cfg.get("output_home", self.cfg.get("output_dir")))
             .expanduser()
             .resolve()
         )
